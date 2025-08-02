@@ -119,70 +119,7 @@ export async function exportAsPDF(element, filename) {
     }
 }
 
-/**
- * Export invoice as JSON
- * @param {Object} invoiceData - Invoice data to export
- * @param {string} filename - Filename for the export
- */
-export function exportAsJSON(invoiceData, filename) {
-    try {
-        const dataStr = JSON.stringify(invoiceData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = `${filename}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        URL.revokeObjectURL(link.href);
-        
-        showNotification('JSON exported successfully!', 'success');
-    } catch (error) {
-        console.error('Error exporting JSON:', error);
-        showNotification('Error exporting JSON. Please try again.', 'error');
-    }
-}
 
-/**
- * Export invoice as CSV
- * @param {Object} invoiceData - Invoice data to export
- * @param {string} filename - Filename for the export
- */
-export function exportAsCSV(invoiceData, filename) {
-    try {
-        const csvContent = [
-            ['Invoice Number', invoiceData.invoiceNumber],
-            ['Invoice Date', invoiceData.invoiceDate],
-            ['Due Date', invoiceData.dueDate],
-            ['From', invoiceData.fromName],
-            ['To', invoiceData.toName],
-            ['Description', invoiceData.description],
-            ['Quantity', invoiceData.quantity],
-            ['Rate (sats)', invoiceData.rate],
-            ['Total (sats)', invoiceData.total],
-            ['Lightning Invoice', invoiceData.lightningInvoice || ''],
-            ['Notes', invoiceData.notes || '']
-        ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-
-        const dataBlob = new Blob([csvContent], { type: 'text/csv' });
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = `${filename}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        URL.revokeObjectURL(link.href);
-        
-        showNotification('CSV exported successfully!', 'success');
-    } catch (error) {
-        console.error('Error exporting CSV:', error);
-        showNotification('Error exporting CSV. Please try again.', 'error');
-    }
-}
 
 /**
  * Print invoice

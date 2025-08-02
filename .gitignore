@@ -54,4 +54,7 @@ jspm_packages/
 *.tgz
 
 # Yarn Integrity file
-.yarn-integrity 
+.yarn-integrity
+
+# Keep dist for GitHub Pages deployment
+!dist/ 

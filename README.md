@@ -6,8 +6,8 @@ A modern, feature-rich invoice generator specifically designed for Bitcoin Light
 
 ### Core Functionality
 - **Real-time Preview**: See your invoice update as you type
-- **Lightning Network Integration**: Support for Lightning Network invoices
-- **Multiple Export Formats**: PDF, PNG, JSON, and CSV
+- **Lightning Network Integration**: Support for Lightning Network invoices with QR code generation
+- **Multiple Export Formats**: PDF and PNG image export
 - **Print Support**: Optimized print layout
 - **Responsive Design**: Works on desktop and mobile devices
 
@@ -18,14 +18,12 @@ A modern, feature-rich invoice generator specifically designed for Bitcoin Light
 - **Invoice Number Generation**: Automatic unique invoice number generation
 - **Input Validation**: Lightning invoice format validation
 - **Error Handling**: Comprehensive error handling with user notifications
-- **Accessibility**: WCAG compliant with keyboard navigation support
+- **QR Code Generation**: Automatic Bitcoin QR code for Lightning invoices
 
 ### Export Options
-- **PDF Export**: High-quality PDF generation
-- **Image Export**: PNG format with high resolution
-- **JSON Export**: Structured data export
-- **CSV Export**: Spreadsheet-friendly format
-- **Print**: Browser print functionality
+- **PDF Export**: High-quality PDF generation with proper formatting
+- **Image Export**: PNG format with high resolution (2x scale)
+- **Print**: Browser print functionality with optimized layout
 
 ## 🚀 Getting Started
 
@@ -110,14 +108,13 @@ The application is organized into modules:
 All styles are in `src/styles/main.css`. The design uses CSS custom properties and can be easily customized.
 
 ### Templates
-Templates are stored in localStorage and can be managed through the UI. You can also programmatically create templates.
+Templates are stored in localStorage and can be managed through the UI. You can save and load different invoice templates for quick reuse.
 
 ### Settings
 Application settings are stored in localStorage and include:
 - Auto-save preferences
 - Default invoice prefix
-- Default currency
-- Theme preferences
+- Form data persistence
 
 ## 🔧 Configuration
 
@@ -131,16 +128,28 @@ The `vite.config.js` file contains build and development server configuration. Y
 Key dependencies:
 - **html2canvas**: For PDF and image export
 - **jspdf**: For PDF generation
+- **bitcoin-qr**: For Lightning invoice QR code generation
 - **vite**: Build tool and development server
 
 ## 🚀 Deployment
 
-### Static Hosting
-The built application can be deployed to any static hosting service:
+### GitHub Pages (Recommended)
+This project is configured for automatic deployment to GitHub Pages:
+
+1. **Enable GitHub Pages** in your repository settings:
+   - Go to Settings → Pages
+   - Source: "GitHub Actions"
+   - The workflow will automatically deploy on pushes to the `main` branch
+
+2. **Your site will be available at**: `https://[username].github.io/bullishinvoice/`
+
+3. **Automatic Deployment**: Every push to the `main` branch triggers a new deployment
+
+### Manual Deployment
+For other static hosting services:
 
 - **Netlify**: Drag and drop the `dist/` folder
 - **Vercel**: Connect your repository
-- **GitHub Pages**: Deploy from the `dist/` branch
 - **AWS S3**: Upload the `dist/` contents
 
 ### Build Output
