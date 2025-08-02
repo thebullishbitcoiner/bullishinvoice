@@ -58,7 +58,7 @@ A modern, feature-rich invoice generator specifically designed for Bitcoin Light
 npm run build
 ```
 
-The built files will be in the `dist/` directory, ready for deployment.
+The built files will be created directly in the root directory, ready for GitHub Pages deployment.
 
 ### Preview Production Build
 
@@ -153,7 +153,7 @@ For other static hosting services:
 - **AWS S3**: Upload the `dist/` contents
 
 ### Build Output
-The build process creates optimized files in the `dist/` directory:
+The build process creates optimized files directly in the root directory:
 - Minified CSS and JavaScript
 - Optimized assets
 - HTML file ready for production
