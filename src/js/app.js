@@ -4,6 +4,7 @@ import {
     formatNumber, 
     generateInvoiceNumber, 
     validateLightningInvoice, 
+    decodeLightningInvoice,
     getDefaultDates, 
     calculateTotal,
     showNotification,
@@ -52,6 +53,8 @@ class InvoiceGenerator {
                 this.saveFormData();
             }, 300));
         });
+        
+
 
         // Export buttons
         document.getElementById('exportPdfBtn')?.addEventListener('click', () => {
@@ -74,8 +77,8 @@ class InvoiceGenerator {
         });
 
         // Lightning invoice validation
-        document.getElementById('lightningInvoice')?.addEventListener('blur', (e) => {
-            this.validateLightningInvoice(e.target);
+        document.getElementById('lightningInvoice')?.addEventListener('blur', async (e) => {
+            await this.validateLightningInvoice(e.target);
         });
 
 
@@ -161,6 +164,9 @@ class InvoiceGenerator {
                 lightningSection.style.display = 'block';
                 document.getElementById('previewLightningInvoice').textContent = data.lightningInvoice;
                 
+                // Decode and display Lightning invoice details
+                this.updateLightningDetails(data.lightningInvoice);
+                
                 // Show QR code container
                 const qrContainer = document.getElementById('qrCodeContainer');
                 if (qrContainer) {
@@ -184,7 +190,7 @@ class InvoiceGenerator {
         }
     }
 
-    validateLightningInvoice(input) {
+    async validateLightningInvoice(input) {
         const isValid = validateLightningInvoice(input.value);
         
         input.classList.remove('input-error', 'input-success');
@@ -193,8 +199,20 @@ class InvoiceGenerator {
             input.classList.add('input-error');
             this.showError(input, 'Invalid Lightning Network invoice format');
         } else if (input.value.trim() && isValid) {
-            input.classList.add('input-success');
-            this.removeError(input);
+            // Try to decode the invoice for additional validation
+            try {
+                const decoded = await decodeLightningInvoice(input.value);
+                if (decoded) {
+                    input.classList.add('input-success');
+                    this.removeError(input);
+                } else {
+                    input.classList.add('input-error');
+                    this.showError(input, 'Invalid Lightning Network invoice');
+                }
+            } catch (error) {
+                input.classList.add('input-error');
+                this.showError(input, 'Invalid Lightning Network invoice');
+            }
         }
     }
 
@@ -411,9 +429,57 @@ class InvoiceGenerator {
 
     updateQRCode(lightningInvoice) {
         const qrElement = document.getElementById('lightningQR');
+        
         if (qrElement && lightningInvoice) {
             // Update the lightning attribute to generate new QR code
             qrElement.setAttribute('lightning', lightningInvoice);
+        }
+    }
+
+    async updateLightningDetails(lightningInvoice) {
+        try {
+            const decoded = await decodeLightningInvoice(lightningInvoice);
+            const expiryElement = document.getElementById('lightningExpiry');
+            
+            if (decoded && expiryElement) {
+                // Display expiration time
+                if (decoded.timestamp && decoded.expiry) {
+                    const expiryDate = new Date((decoded.timestamp + decoded.expiry) * 1000);
+                    const now = new Date();
+                    const timeLeft = expiryDate - now;
+                    
+                    if (timeLeft > 0) {
+                        // Format as "Expires: 8/3/2025 4:00 PM"
+                        const month = expiryDate.getMonth() + 1;
+                        const day = expiryDate.getDate();
+                        const year = expiryDate.getFullYear();
+                        const hours = expiryDate.getHours();
+                        const minutes = expiryDate.getMinutes();
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        const displayHours = hours % 12 || 12;
+                        const displayMinutes = minutes.toString().padStart(2, '0');
+                        const formattedDate = `${month}/${day}/${year} ${displayHours}:${displayMinutes} ${ampm}`;
+                        expiryElement.textContent = `Expires: ${formattedDate}`;
+                    } else {
+                        expiryElement.textContent = 'Expired';
+                    }
+                } else {
+                    expiryElement.textContent = 'Expiration time not available';
+                }
+                
+                expiryElement.style.display = 'inline-block';
+            } else {
+                // Hide expiry if decoding failed
+                if (expiryElement) {
+                    expiryElement.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating Lightning details:', error);
+            const expiryElement = document.getElementById('lightningExpiry');
+            if (expiryElement) {
+                expiryElement.style.display = 'none';
+            }
         }
     }
 

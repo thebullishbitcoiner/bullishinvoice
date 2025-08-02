@@ -24,8 +24,8 @@ export async function exportAsImage(element, filename) {
             useCORS: true,
             allowTaint: false,
             logging: false,
-            width: element.offsetWidth,
-            height: element.offsetHeight
+            scrollX: 0,
+            scrollY: 0
         });
 
         // Create download link
@@ -76,28 +76,39 @@ export async function exportAsPDF(element, filename) {
             useCORS: true,
             allowTaint: false,
             logging: false,
-            width: element.offsetWidth,
-            height: element.offsetHeight
+            scrollX: 0,
+            scrollY: 0
         });
 
         const pdf = new jsPDF('p', 'mm', 'a4');
 
         const imgData = canvas.toDataURL('image/png');
-        const imgWidth = 210; // A4 width in mm
+        const pageWidth = 210; // A4 width in mm
         const pageHeight = 295; // A4 height in mm
+        
+        // Calculate dimensions to fit the image properly
+        const imgWidth = pageWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
+        
+        // If image is taller than page, we'll need multiple pages
+        if (imgHeight <= pageHeight) {
+            // Single page - center the image
+            const yOffset = (pageHeight - imgHeight) / 2;
+            pdf.addImage(imgData, 'PNG', 0, yOffset, imgWidth, imgHeight);
+        } else {
+            // Multiple pages needed
+            let heightLeft = imgHeight;
+            let position = 0;
 
-        let position = 0;
-
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
             pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
         }
 
         pdf.save(`${filename}.pdf`);

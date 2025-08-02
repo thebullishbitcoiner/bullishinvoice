@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>bullishInvoice</title>
     <script type="module" src="https://unpkg.com/bitcoin-qr@1.4.1/dist/bitcoin-qr/bitcoin-qr.esm.js"></script>
-  <script type="module" crossorigin src="/bullishinvoice/assets/index-Bg3sBi_5.js"></script>
+  <script type="module" crossorigin src="/bullishinvoice/assets/index-BvW11dbm.js"></script>
   <link rel="modulepreload" crossorigin href="/bullishinvoice/assets/vendor-B0ga06J7.js">
-  <link rel="stylesheet" crossorigin href="/bullishinvoice/assets/index-ChSZVnEC.css">
+  <link rel="stylesheet" crossorigin href="/bullishinvoice/assets/index-CdtU9uS6.css">
 </head>
 <body>
     <div class="container">
@@ -138,25 +138,24 @@
                 </div>
 
                 <div class="lightning-section" id="lightningSection" style="display: none;">
-                    <h3>
-                        ⚡ Lightning Payment
+                    <h3 class="lightning-header">
+                        <span>⚡ Lightning Payment</span>
+                        <span class="lightning-expiry" id="lightningExpiry"></span>
                     </h3>
-                    <div class="lightning-invoice-display" id="previewLightningInvoice"></div>
-                    <div class="qr-code-container" id="qrCodeContainer" style="display: none;">
-                        <h4>📱 Scan to Pay</h4>
-                        <div class="qr-wrapper">
-                            <bitcoin-qr 
-                                id="lightningQR"
-                                lightning=""
-                                width="200"
-                                height="200"
-                                type="svg"
-                                dots-color="#ff9900"
-                                background-color="#ffffff"
-                                corners-square-color="#ff9900"
-                                corners-square-type="extra-rounded"
-                                dots-type="rounded">
-                            </bitcoin-qr>
+                    <div class="lightning-content">
+                        <div class="lightning-invoice-display" id="previewLightningInvoice"></div>
+                        <div class="qr-code-container" id="qrCodeContainer" style="display: none;">
+                            <h4>📱 Scan to Pay</h4>
+                                                    <bitcoin-qr 
+                            id="lightningQR"
+                            lightning=""
+                            width="300"
+                            height="300"
+                            type="svg"
+                            dots-color="#ff9900"
+                            background-color="#ffffff"
+                            corners-square-color="#ff9900">
+                        </bitcoin-qr>
                         </div>
                     </div>
                 </div>

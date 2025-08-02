@@ -6,7 +6,8 @@ A modern, feature-rich invoice generator specifically designed for Bitcoin Light
 
 ### Core Functionality
 - **Real-time Preview**: See your invoice update as you type
-- **Lightning Network Integration**: Support for Lightning Network invoices with QR code generation
+- **Lightning Network Integration**: Support for Lightning Network invoices with QR code generation and automatic decoding
+- **Invoice Decoding**: Automatically decode Lightning invoices to display amount and expiration time
 - **Multiple Export Formats**: PDF and PNG image export
 - **Print Support**: Optimized print layout
 - **Responsive Design**: Works on desktop and mobile devices
@@ -129,6 +130,7 @@ Key dependencies:
 - **html2canvas**: For PDF and image export
 - **jspdf**: For PDF generation
 - **bitcoin-qr**: For Lightning invoice QR code generation
+- **@getalby/lightning-tools**: For Lightning invoice decoding and validation
 - **vite**: Build tool and development server
 
 ## 🚀 Deployment

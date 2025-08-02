@@ -136,25 +136,24 @@
                 </div>
 
                 <div class="lightning-section" id="lightningSection" style="display: none;">
-                    <h3>
-                        ⚡ Lightning Payment
+                    <h3 class="lightning-header">
+                        <span>⚡ Lightning Payment</span>
+                        <span class="lightning-expiry" id="lightningExpiry"></span>
                     </h3>
-                    <div class="lightning-invoice-display" id="previewLightningInvoice"></div>
-                    <div class="qr-code-container" id="qrCodeContainer" style="display: none;">
-                        <h4>📱 Scan to Pay</h4>
-                        <div class="qr-wrapper">
-                            <bitcoin-qr 
-                                id="lightningQR"
-                                lightning=""
-                                width="200"
-                                height="200"
-                                type="svg"
-                                dots-color="#ff9900"
-                                background-color="#ffffff"
-                                corners-square-color="#ff9900"
-                                corners-square-type="extra-rounded"
-                                dots-type="rounded">
-                            </bitcoin-qr>
+                    <div class="lightning-content">
+                        <div class="lightning-invoice-display" id="previewLightningInvoice"></div>
+                        <div class="qr-code-container" id="qrCodeContainer" style="display: none;">
+                            <h4>📱 Scan to Pay</h4>
+                                                    <bitcoin-qr 
+                            id="lightningQR"
+                            lightning=""
+                            width="300"
+                            height="300"
+                            type="svg"
+                            dots-color="#ff9900"
+                            background-color="#ffffff"
+                            corners-square-color="#ff9900">
+                        </bitcoin-qr>
                         </div>
                     </div>
                 </div>
