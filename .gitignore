@@ -8,6 +8,10 @@ yarn-error.log*
 dist/
 build/
 
+# Keep built files for GitHub Pages deployment
+!index.html
+!assets/
+
 # Environment variables
 .env
 .env.local
