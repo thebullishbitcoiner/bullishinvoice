@@ -12,7 +12,7 @@
         <header class="app-header">
             <h1>
                 bullishInvoice
-                <span class="version">v1.0.0</span>
+                <span class="version" id="versionDisplay">v0.0.2</span>
             </h1>
         </header>
         
@@ -42,22 +42,30 @@
                         placeholder="Customer Name&#10;456 Lightning Ave&#10;Crypto City, CC 67890&#10;customer@email.com"></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label for="description">Item/Service Description</label>
-                    <input type="text" id="description" placeholder="Bitcoin Consulting Services">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="quantity">Quantity</label>
-                        <input type="number" id="quantity" placeholder="1" value="1" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="rate">Rate (per unit in sats)</label>
-                        <div class="sats-input">
-                            <input type="number" id="rate" placeholder="100000" min="1">
+                <div class="line-items-section">
+                    <h3>Line Items</h3>
+                    <div id="lineItemsContainer">
+                        <div class="line-item" data-item-id="1">
+                            <div class="form-group">
+                                <label for="description-1">Item/Service Description</label>
+                                <input type="text" id="description-1" placeholder="Bitcoin Consulting Services" class="item-description">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="quantity-1">Quantity</label>
+                                    <input type="number" id="quantity-1" placeholder="1" value="1" min="1" class="item-quantity">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rate-1">Price</label>
+                                    <div class="sats-input">
+                                        <input type="number" id="rate-1" placeholder="100000" min="1" class="item-rate">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-danger remove-item" data-item-id="1">X</button>
                         </div>
                     </div>
+                    <button type="button" class="btn btn-secondary" id="addLineItemBtn">Add Line Item</button>
                 </div>
 
                 <div class="form-group">
@@ -73,20 +81,22 @@
 
                 <div class="action-buttons">
                     <button type="button" class="btn btn-secondary" id="exportPdfBtn">
-                        📄 Export PDF
+                        Export PDF
                     </button>
                     <button type="button" class="btn btn-primary" id="exportImageBtn">
-                        🖼️ Export Image
+                        Export Image
                     </button>
                     <button type="button" class="btn btn-primary" id="printBtn">
-                        🖨️ Print
+                        Print
                     </button>
                 </div>
             </form>
         </div>
 
         <div class="preview-panel">
-            <div class="invoice-preview" id="invoicePreview">
+            <div class="preview-container">
+                <h3>Preview</h3>
+                <div class="invoice-preview" id="invoicePreview">
                 <div class="invoice-header">
                     <div class="invoice-title">
                         INVOICE
@@ -115,11 +125,11 @@
                         <tr>
                             <th>Description</th>
                             <th>Qty</th>
-                            <th>Rate (sats)</th>
+                            <th>Price</th>
                             <th class="amount">Amount (sats)</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="previewItemsTable">
                         <tr>
                             <td id="previewDescription">Bitcoin Consulting Services</td>
                             <td id="previewQuantity">1</td>
@@ -137,13 +147,12 @@
 
                 <div class="lightning-section" id="lightningSection" style="display: none;">
                     <h3 class="lightning-header">
-                        <span>⚡ Lightning Payment</span>
+                        <span>Lightning Payment</span>
                         <span class="lightning-expiry" id="lightningExpiry"></span>
                     </h3>
                     <div class="lightning-content">
                         <div class="lightning-invoice-display" id="previewLightningInvoice"></div>
                         <div class="qr-code-container" id="qrCodeContainer" style="display: none;">
-                            <h4>📱 Scan to Pay</h4>
                                                     <bitcoin-qr 
                             id="lightningQR"
                             lightning=""

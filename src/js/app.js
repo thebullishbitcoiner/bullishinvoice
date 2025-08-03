@@ -39,6 +39,7 @@ class InvoiceGenerator {
 
     init() {
         this.setupEventListeners();
+        this.setupLineItemEventListeners();
         this.loadSavedData();
         this.setupAutoSave();
         this.updatePreview();
@@ -95,21 +96,43 @@ class InvoiceGenerator {
     }
 
     getFormData() {
+        const lineItems = this.getLineItems();
+        const total = lineItems.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+        
         return {
             invoiceNumber: document.getElementById('invoiceNumber')?.value || 'INV-001',
             invoiceDate: document.getElementById('invoiceDate')?.value || '',
             fromName: document.getElementById('fromName')?.value || '',
             toName: document.getElementById('toName')?.value || '',
-            description: document.getElementById('description')?.value || '',
-            quantity: parseInt(document.getElementById('quantity')?.value) || 1,
-            rate: parseInt(document.getElementById('rate')?.value) || 0,
+            lineItems: lineItems,
             lightningInvoice: document.getElementById('lightningInvoice')?.value || '',
             notes: document.getElementById('notes')?.value || '',
-            total: calculateTotal(
-                parseInt(document.getElementById('quantity')?.value) || 1,
-                parseInt(document.getElementById('rate')?.value) || 0
-            )
+            total: total
         };
+    }
+
+    getLineItems() {
+        const lineItems = [];
+        const lineItemElements = document.querySelectorAll('.line-item');
+        
+        lineItemElements.forEach(element => {
+            const itemId = element.getAttribute('data-item-id');
+            const description = document.getElementById(`description-${itemId}`)?.value || '';
+            const quantity = parseInt(document.getElementById(`quantity-${itemId}`)?.value) || 1;
+            const rate = parseInt(document.getElementById(`rate-${itemId}`)?.value) || 0;
+            
+            if (description.trim()) {
+                lineItems.push({
+                    id: itemId,
+                    description: description,
+                    quantity: quantity,
+                    rate: rate,
+                    amount: quantity * rate
+                });
+            }
+        });
+        
+        return lineItems;
     }
 
     setFormData(data) {
@@ -117,11 +140,48 @@ class InvoiceGenerator {
         if (data.invoiceDate) document.getElementById('invoiceDate').value = data.invoiceDate;
         if (data.fromName) document.getElementById('fromName').value = data.fromName;
         if (data.toName) document.getElementById('toName').value = data.toName;
-        if (data.description) document.getElementById('description').value = data.description;
-        if (data.quantity) document.getElementById('quantity').value = data.quantity;
-        if (data.rate) document.getElementById('rate').value = data.rate;
         if (data.lightningInvoice) document.getElementById('lightningInvoice').value = data.lightningInvoice;
         if (data.notes) document.getElementById('notes').value = data.notes;
+        
+        // Handle line items
+        if (data.lineItems && Array.isArray(data.lineItems)) {
+            this.setLineItems(data.lineItems);
+        }
+    }
+
+    setLineItems(lineItems) {
+        // Clear existing line items except the first one
+        const container = document.getElementById('lineItemsContainer');
+        const existingItems = container.querySelectorAll('.line-item');
+        
+        // Keep the first item and clear its values
+        if (existingItems.length > 0) {
+            const firstItem = existingItems[0];
+            document.getElementById('description-1').value = '';
+            document.getElementById('quantity-1').value = '1';
+            document.getElementById('rate-1').value = '';
+        }
+        
+        // Remove additional items
+        for (let i = 1; i < existingItems.length; i++) {
+            existingItems[i].remove();
+        }
+        
+        // Add line items
+        lineItems.forEach((item, index) => {
+            if (index === 0) {
+                // Update first item
+                document.getElementById('description-1').value = item.description;
+                document.getElementById('quantity-1').value = item.quantity;
+                document.getElementById('rate-1').value = item.rate;
+            } else {
+                // Add new item
+                this.addLineItem(item.description, item.quantity, item.rate);
+            }
+        });
+        
+        // Update preview
+        this.updatePreview();
     }
 
     updatePreview() {
@@ -141,18 +201,10 @@ class InvoiceGenerator {
         if (document.getElementById('previewToName')) {
             document.getElementById('previewToName').innerHTML = sanitizeHTML(data.toName.replace(/\n/g, '<br>'));
         }
-        if (document.getElementById('previewDescription')) {
-            document.getElementById('previewDescription').textContent = data.description;
-        }
-        if (document.getElementById('previewQuantity')) {
-            document.getElementById('previewQuantity').textContent = data.quantity;
-        }
-        if (document.getElementById('previewRate')) {
-            document.getElementById('previewRate').textContent = formatNumber(data.rate);
-        }
-        if (document.getElementById('previewAmount')) {
-            document.getElementById('previewAmount').textContent = formatNumber(total);
-        }
+
+        // Update line items table
+        this.updatePreviewTable(data.lineItems);
+
         if (document.getElementById('previewTotal')) {
             document.getElementById('previewTotal').textContent = formatNumber(total);
         }
@@ -302,19 +354,19 @@ class InvoiceGenerator {
         const controls = document.createElement('div');
         controls.className = 'template-controls';
         controls.innerHTML = `
-            <h3>📋 Templates</h3>
+            <h3>Templates</h3>
             <div class="template-buttons">
-                <button type="button" class="btn btn-small btn-success" onclick="app.saveCurrentTemplate()">
-                    💾 Save Template
+                <button type="button" class="btn btn-success" onclick="app.saveCurrentTemplate()">
+                    Save Template
                 </button>
-                <button type="button" class="btn btn-small btn-secondary" onclick="app.loadTemplateDialog()">
-                    📂 Load Template
+                <button type="button" class="btn btn-secondary" onclick="app.loadTemplateDialog()">
+                    Load Template
                 </button>
-                <button type="button" class="btn btn-small btn-warning" onclick="app.clearForm()">
-                    🗑️ Clear Form
+                <button type="button" class="btn btn-warning" onclick="app.clearForm()">
+                    Clear Form
                 </button>
-                <button type="button" class="btn btn-small btn-primary" onclick="app.generateNewInvoiceNumber()">
-                    🔄 New Invoice #
+                <button type="button" class="btn btn-primary" onclick="app.generateNewInvoiceNumber()">
+                    New Invoice #
                 </button>
             </div>
         `;
@@ -413,17 +465,17 @@ class InvoiceGenerator {
         document.querySelector('div[style*="position: fixed"]').remove();
     }
 
-    async loadVersion() {
+    loadVersion() {
         try {
-            const response = await fetch('/package.json');
-            const packageData = await response.json();
-            const versionElement = document.querySelector('.version');
+            // Use the version defined by Vite at build time
+            const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.2';
+            const versionElement = document.getElementById('versionDisplay');
             if (versionElement) {
-                versionElement.textContent = `v${packageData.version}`;
+                versionElement.textContent = `v${version}`;
             }
         } catch (error) {
-            console.log('Could not load version from package.json, using default');
-            // Fallback to default version if package.json is not accessible
+            console.log('Could not load version, using default');
+            // Fallback to default version
         }
     }
 
@@ -480,6 +532,131 @@ class InvoiceGenerator {
             if (expiryElement) {
                 expiryElement.style.display = 'none';
             }
+        }
+    }
+
+    updatePreviewTable(lineItems) {
+        const tableBody = document.getElementById('previewItemsTable');
+        if (!tableBody) return;
+
+        // Clear existing rows
+        tableBody.innerHTML = '';
+
+        // Add rows for each line item
+        lineItems.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${sanitizeHTML(item.description)}</td>
+                <td>${item.quantity}</td>
+                <td>${formatNumber(item.rate)}</td>
+                <td class="amount">${formatNumber(item.amount)}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        // Add empty row if no items
+        if (lineItems.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>No items</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="amount">0</td>
+            `;
+            tableBody.appendChild(row);
+        }
+    }
+
+    addLineItem(description = '', quantity = 1, rate = 0) {
+        const nextId = this.getNextItemId();
+        const lineItemHTML = `
+            <div class="line-item" data-item-id="${nextId}">
+                <div class="form-group">
+                    <label for="description-${nextId}">Item/Service Description</label>
+                    <input type="text" id="description-${nextId}" placeholder="Bitcoin Consulting Services" class="item-description" value="${description}">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quantity-${nextId}">Quantity</label>
+                        <input type="number" id="quantity-${nextId}" placeholder="1" value="${quantity}" min="1" class="item-quantity">
+                    </div>
+                    <div class="form-group">
+                        <label for="rate-${nextId}">Price</label>
+                        <div class="sats-input">
+                            <input type="number" id="rate-${nextId}" placeholder="100000" min="1" class="item-rate" value="${rate}">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-danger remove-item" data-item-id="${nextId}">X</button>
+            </div>
+        `;
+        
+        const container = document.getElementById('lineItemsContainer');
+        container.insertAdjacentHTML('beforeend', lineItemHTML);
+        
+        this.addLineItemEventListeners(nextId);
+    }
+
+    getNextItemId() {
+        const existingItems = document.querySelectorAll('.line-item');
+        let maxId = 0;
+        
+        existingItems.forEach(item => {
+            const id = parseInt(item.getAttribute('data-item-id'));
+            if (id > maxId) maxId = id;
+        });
+        
+        return maxId + 1;
+    }
+
+    addLineItemEventListeners(itemId) {
+        const inputs = [
+            document.getElementById(`description-${itemId}`),
+            document.getElementById(`quantity-${itemId}`),
+            document.getElementById(`rate-${itemId}`)
+        ];
+        
+        inputs.forEach(input => {
+            if (input) {
+                input.addEventListener('input', debounce(() => {
+                    this.updatePreview();
+                    this.saveFormData();
+                }, 300));
+            }
+        });
+        
+        // Add remove button listener
+        const removeBtn = document.querySelector(`[data-item-id="${itemId}"].remove-item`);
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                this.removeLineItem(itemId);
+            });
+        }
+    }
+
+    removeLineItem(itemId) {
+        const lineItem = document.querySelector(`[data-item-id="${itemId}"]`);
+        if (lineItem) {
+            lineItem.remove();
+            this.updatePreview();
+            this.saveFormData();
+        }
+    }
+
+    setupLineItemEventListeners() {
+        // Add event listeners to existing line items
+        const existingItems = document.querySelectorAll('.line-item');
+        existingItems.forEach(item => {
+            const itemId = item.getAttribute('data-item-id');
+            this.addLineItemEventListeners(itemId);
+        });
+
+        // Add event listener to "Add Line Item" button
+        const addBtn = document.getElementById('addLineItemBtn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                this.addLineItem();
+            });
         }
     }
 

@@ -48,7 +48,7 @@ export async function exportAsImage(element, filename) {
 
         // Restore button
         const btn = event.target;
-        btn.innerHTML = '🖼️ Export Image';
+        btn.innerHTML = 'Export Image';
         btn.disabled = false;
     }
 }
@@ -125,7 +125,7 @@ export async function exportAsPDF(element, filename) {
 
         // Restore button
         const btn = event.target;
-        btn.innerHTML = '📄 Export PDF';
+        btn.innerHTML = 'Export PDF';
         btn.disabled = false;
     }
 }
@@ -138,52 +138,97 @@ export async function exportAsPDF(element, filename) {
  */
 export function printInvoice(element) {
     try {
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank');
-        const printContent = element.cloneNode(true);
+        // Store original styles
+        const originalDisplay = document.body.style.display;
+        const originalVisibility = document.body.style.visibility;
         
-        // Add print styles
-        const printStyles = `
-            <style>
-                body { 
-                    font-family: Arial, sans-serif; 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: white; 
-                    color: black; 
+        // Hide everything except the invoice
+        document.body.style.display = 'block';
+        document.body.style.visibility = 'hidden';
+        
+        // Show only the invoice element
+        element.style.visibility = 'visible';
+        element.style.position = 'absolute';
+        element.style.left = '0';
+        element.style.top = '0';
+        element.style.width = '8.5in';
+        element.style.height = '11in';
+        element.style.margin = '0';
+        element.style.padding = '0.5in';
+        element.style.backgroundColor = 'white';
+        element.style.color = 'black';
+        element.style.fontFamily = 'Arial, sans-serif';
+        element.style.boxShadow = 'none';
+        element.style.border = 'none';
+        element.style.overflow = 'visible';
+        element.style.zIndex = '9999';
+        
+        // Add print-specific styles
+        const printStyles = document.createElement('style');
+        printStyles.textContent = `
+            @media print {
+                body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    background: white !important;
                 }
-                .invoice-preview { 
-                    box-shadow: none; 
-                    border: 1px solid #ccc; 
-                    padding: 20px; 
+                .invoice-preview {
+                    box-shadow: none !important;
+                    border: none !important;
+                    margin: 0 !important;
+                    padding: 0.5in !important;
+                    width: 8.5in !important;
+                    height: 11in !important;
+                    max-width: none !important;
+                    overflow: visible !important;
+                    background: white !important;
+                    color: black !important;
+                    font-family: Arial, sans-serif !important;
                 }
-                @media print {
-                    body { padding: 0; }
+                .lightning-section {
+                    break-inside: avoid;
                 }
-            </style>
+                .qr-code-container {
+                    break-inside: avoid;
+                }
+                .form-panel,
+                .app-header,
+                .action-buttons,
+                .template-controls {
+                    display: none !important;
+                }
+            }
         `;
+        document.head.appendChild(printStyles);
         
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>Invoice Print</title>
-                    ${printStyles}
-                </head>
-                <body>
-                    ${printContent.outerHTML}
-                </body>
-            </html>
-        `);
+        // Trigger print
+        window.print();
         
-        printWindow.document.close();
-        printWindow.focus();
-        
-        // Wait for content to load then print
-        printWindow.onload = function() {
-            printWindow.print();
-            printWindow.close();
-        };
+        // Restore original styles after printing
+        setTimeout(() => {
+            document.body.style.display = originalDisplay;
+            document.body.style.visibility = originalVisibility;
+            
+            // Reset invoice element styles
+            element.style.visibility = '';
+            element.style.position = '';
+            element.style.left = '';
+            element.style.top = '';
+            element.style.width = '';
+            element.style.height = '';
+            element.style.margin = '';
+            element.style.padding = '';
+            element.style.backgroundColor = '';
+            element.style.color = '';
+            element.style.fontFamily = '';
+            element.style.boxShadow = '';
+            element.style.border = '';
+            element.style.overflow = '';
+            element.style.zIndex = '';
+            
+            // Remove print styles
+            document.head.removeChild(printStyles);
+        }, 1000);
         
         showNotification('Print dialog opened!', 'success');
     } catch (error) {
