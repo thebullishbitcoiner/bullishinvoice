@@ -47,52 +47,89 @@ class InvoiceGenerator {
     }
 
     setupEventListeners() {
-        // Form input listeners
-        document.querySelectorAll('input, textarea').forEach(element => {
-            element.addEventListener('input', debounce(() => {
+        // Form input event listeners
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
                 this.updatePreview();
                 this.saveFormData();
-            }, 300));
-        });
-        
-
-
-        // Export buttons
-        document.getElementById('exportPdfBtn')?.addEventListener('click', () => {
-            const element = document.getElementById('invoicePreview');
-            const filename = `invoice-${this.getFormData().invoiceNumber || 'INV-001'}`;
-            exportAsPDF(element, filename);
-        });
-
-        document.getElementById('exportImageBtn')?.addEventListener('click', () => {
-            const element = document.getElementById('invoicePreview');
-            const filename = `invoice-${this.getFormData().invoiceNumber || 'INV-001'}`;
-            exportAsImage(element, filename);
-        });
-
-
-
-        document.getElementById('printBtn')?.addEventListener('click', () => {
-            const element = document.getElementById('invoicePreview');
-            printInvoice(element);
+            });
         });
 
         // Lightning invoice validation
-        document.getElementById('lightningInvoice')?.addEventListener('blur', async (e) => {
-            await this.validateLightningInvoice(e.target);
+        const lightningInput = document.getElementById('lightningInvoice');
+        if (lightningInput) {
+            lightningInput.addEventListener('input', async (e) => {
+                const isValid = await this.validateLightningInvoice(e.target);
+                if (isValid) {
+                    this.updateQRCode(e.target.value);
+                }
+            });
+        }
+
+        // Export buttons
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const exportImageBtn = document.getElementById('exportImageBtn');
+        const printBtn = document.getElementById('printBtn');
+
+        if (exportPdfBtn) {
+            exportPdfBtn.addEventListener('click', () => {
+                const element = document.getElementById('invoicePreview');
+                if (element) {
+                    exportAsPDF(element, 'invoice');
+                }
+            });
+        }
+
+        if (exportImageBtn) {
+            exportImageBtn.addEventListener('click', () => {
+                const element = document.getElementById('invoicePreview');
+                if (element) {
+                    exportAsImage(element, 'invoice');
+                }
+            });
+        }
+
+        if (printBtn) {
+            printBtn.addEventListener('click', () => {
+                const element = document.getElementById('invoicePreview');
+                if (element) {
+                    printInvoice(element);
+                }
+            });
+        }
+
+        // Window resize listener for QR code size
+        window.addEventListener('resize', () => {
+            const lightningInputResize = document.getElementById('lightningInvoice');
+            if (lightningInputResize && lightningInputResize.value) {
+                this.updateQRCode(lightningInputResize.value);
+            }
         });
 
-
+        // Lightning invoice validation on blur
+        const lightningInputBlur = document.getElementById('lightningInvoice');
+        if (lightningInputBlur) {
+            lightningInputBlur.addEventListener('blur', async (e) => {
+                await this.validateLightningInvoice(e.target);
+            });
+        }
 
         // Generate invoice number button
-        document.getElementById('generateInvoiceNumberBtn')?.addEventListener('click', () => {
-            this.generateNewInvoiceNumber();
-        });
+        const generateInvoiceNumberBtn = document.getElementById('generateInvoiceNumberBtn');
+        if (generateInvoiceNumberBtn) {
+            generateInvoiceNumberBtn.addEventListener('click', () => {
+                this.generateNewInvoiceNumber();
+            });
+        }
 
         // Clear form button
-        document.getElementById('clearFormBtn')?.addEventListener('click', () => {
-            this.clearForm();
-        });
+        const clearFormBtn = document.getElementById('clearFormBtn');
+        if (clearFormBtn) {
+            clearFormBtn.addEventListener('click', () => {
+                this.clearForm();
+            });
+        }
     }
 
     getFormData() {
@@ -266,6 +303,7 @@ class InvoiceGenerator {
                 this.showError(input, 'Invalid Lightning Network invoice');
             }
         }
+        return isValid; // Return the validation result
     }
 
     showError(input, message) {
@@ -485,6 +523,21 @@ class InvoiceGenerator {
         if (qrElement && lightningInvoice) {
             // Update the lightning attribute to generate new QR code
             qrElement.setAttribute('lightning', lightningInvoice);
+            
+            // Set QR code size based on screen size
+            let qrSize = 300; // Default desktop size
+            
+            if (window.innerWidth <= 480) {
+                // Small mobile
+                qrSize = 150;
+            } else if (window.innerWidth <= 768) {
+                // Regular mobile
+                qrSize = 200;
+            }
+            
+            // Update width and height attributes
+            qrElement.setAttribute('width', qrSize);
+            qrElement.setAttribute('height', qrSize);
         }
     }
 
