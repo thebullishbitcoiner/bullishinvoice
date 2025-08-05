@@ -99,12 +99,12 @@ class InvoiceGenerator {
             });
         }
 
+        // Initial QR code size update
+        this.updateQRCodeSize();
+        
         // Window resize listener for QR code size
         window.addEventListener('resize', () => {
-            const lightningInputResize = document.getElementById('lightningInvoice');
-            if (lightningInputResize && lightningInputResize.value) {
-                this.updateQRCode(lightningInputResize.value);
-            }
+            this.updateQRCodeSize();
         });
 
         // Lightning invoice validation on blur
@@ -517,6 +517,35 @@ class InvoiceGenerator {
         }
     }
 
+    updateQRCodeSize() {
+        const qrElement = document.getElementById('lightningQR');
+        
+        if (qrElement) {
+            // Set QR code size based on screen size (about 1/3 of breakpoint)
+            let qrSize = 300; // Default desktop size
+            
+            console.log('Window width:', window.innerWidth);
+            
+            if (window.innerWidth <= 480) {
+                // Small mobile (480px / 3 ≈ 160px, using 150px)
+                qrSize = 150;
+                console.log('Using small mobile size: 150px');
+            } else if (window.innerWidth <= 768) {
+                // Regular mobile (768px / 3 ≈ 256px, using 200px)
+                qrSize = 200;
+                console.log('Using regular mobile size: 200px');
+            } else {
+                console.log('Using desktop size: 300px');
+            }
+            
+            console.log('Setting QR size to:', qrSize);
+            
+            // Update width and height attributes
+            qrElement.setAttribute('width', qrSize);
+            qrElement.setAttribute('height', qrSize);
+        }
+    }
+
     updateQRCode(lightningInvoice) {
         const qrElement = document.getElementById('lightningQR');
         
@@ -524,20 +553,8 @@ class InvoiceGenerator {
             // Update the lightning attribute to generate new QR code
             qrElement.setAttribute('lightning', lightningInvoice);
             
-            // Set QR code size based on screen size
-            let qrSize = 300; // Default desktop size
-            
-            if (window.innerWidth <= 480) {
-                // Small mobile
-                qrSize = 150;
-            } else if (window.innerWidth <= 768) {
-                // Regular mobile
-                qrSize = 200;
-            }
-            
-            // Update width and height attributes
-            qrElement.setAttribute('width', qrSize);
-            qrElement.setAttribute('height', qrSize);
+            // Also update the size
+            this.updateQRCodeSize();
         }
     }
 

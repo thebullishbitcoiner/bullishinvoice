@@ -13,11 +13,15 @@ body {
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 100%;
     margin: 0 auto;
+    padding: 15px;
+}
+
+.main-content {
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 20px;
 }
 
 .app-header {
@@ -45,12 +49,7 @@ body {
     margin-left: 4px;
 }
 
-.content-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    align-items: start;
-}
+
 
 /* Mobile Responsive Styles */
 @media (max-width: 768px) and (orientation: portrait) {
@@ -74,8 +73,8 @@ body {
         max-width: 100%;
     }
     
-    .content-grid {
-        grid-template-columns: 1fr;
+    .main-content {
+        flex-direction: column;
         gap: 15px;
     }
     
@@ -118,7 +117,7 @@ body {
     }
     
     .preview-panel .invoice-preview .invoice-details {
-        margin-bottom: 0.08in;
+        margin-bottom: 0.05in;
     }
     
     .preview-panel .invoice-preview .invoice-details h3 {
@@ -160,12 +159,17 @@ body {
     }
     
     .preview-panel .invoice-preview .qr-code-container {
-        min-height: 120px;
+        min-height: 200px;
+        position: relative;
     }
     
     .preview-panel .invoice-preview .qr-code-container bitcoin-qr {
-        width: 80px !important;
-        height: 80px !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 200px !important;
+        height: 200px !important;
     }
     
     h1 {
@@ -264,7 +268,7 @@ body {
     
     .preview-panel .invoice-preview .total-amount {
         font-size: 6pt;
-        margin-bottom: 0.08in;
+        margin-bottom: 0.05in;
     }
     
     .preview-panel .invoice-preview .lightning-invoice-display {
@@ -282,12 +286,17 @@ body {
     }
     
     .preview-panel .invoice-preview .qr-code-container {
-        min-height: 60px;
+        min-height: 160px;
+        position: relative;
     }
     
     .preview-panel .invoice-preview .qr-code-container bitcoin-qr {
-        width: 50px !important;
-        height: 50px !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 150px !important;
+        height: 150px !important;
     }
     
     h1 {
@@ -306,16 +315,16 @@ body {
     .invoice-details {
         grid-template-columns: 1fr 1fr;
         gap: 0.3in;
-        margin-bottom: 0.3in !important;
+        margin-bottom: 0.1in !important;
     }
     
     .total-amount {
         font-size: 14pt;
-        margin-bottom: 0.25in !important;
+        margin-bottom: 0.1in !important;
     }
     
     .items-table {
-        margin-bottom: 0.3in !important;
+        margin-bottom: 0.1in !important;
     }
     
     .items-table th:nth-child(1),
@@ -375,8 +384,8 @@ body {
         gap: 10px;
     }
     
-    .content-grid {
-        grid-template-columns: 1fr 1fr;
+    .main-content {
+        flex-direction: row;
         gap: 10px;
     }
     
@@ -455,12 +464,17 @@ body {
     }
     
     .preview-panel .invoice-preview .qr-code-container {
-        min-height: 140px;
+        min-height: 220px;
+        position: relative;
     }
     
     .preview-panel .invoice-preview .qr-code-container bitcoin-qr {
-        width: 100px !important;
-        height: 100px !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 200px !important;
+        height: 200px !important;
     }
     
     h1 {
@@ -479,6 +493,27 @@ body {
     .qr-code-container bitcoin-qr {
         width: 300px !important;
         height: 300px !important;
+    }
+}
+
+/* Main layout - form and preview side by side on larger screens */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        align-items: start;
+    }
+    
+    .form-panel {
+        position: sticky;
+        top: 20px;
     }
 }
 
@@ -623,8 +658,8 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 0.3in;
-    padding-bottom: 0.15in;
+    margin-bottom: 0.1in;
+    padding-bottom: 0.1in;
     border-bottom: 3px solid #ff9900;
 }
 
@@ -639,7 +674,7 @@ textarea {
 .invoice-number {
     text-align: right;
     color: #333;
-    font-size: 12pt;
+    font-size: 10pt;
     font-weight: bold;
 }
 
@@ -648,6 +683,7 @@ textarea {
     grid-template-columns: 1fr 1fr;
     gap: 0.3in;
     margin-bottom: 0.3in;
+    font-size: 10pt;
 }
 
 .detail-section h3 {
@@ -715,7 +751,7 @@ textarea {
 
 .invoice-total {
     text-align: right;
-    margin-bottom: 30px;
+    margin-bottom: 0.1in;
 }
 
 .total-amount {
@@ -728,14 +764,14 @@ textarea {
 .lightning-section {
     background: #f8f9fa;
     color: #333;
-    padding: 20px;
+    padding: 5px;
     margin-bottom: 20px;
     border: 1px solid #e9ecef;
 }
 
 .lightning-section h3 {
     color: #ff9900;
-    margin-bottom: 15px;
+    margin-bottom: 0.05in;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -745,11 +781,16 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 0.05in;
+    font-size: 0.8em !important;
+}
+
+.lightning-header h3,
+.lightning-header span {
+    font-size: 0.8em !important;
 }
 
 .lightning-header .lightning-expiry {
-    font-size: 0.9em;
     color: #856404;
     background: #fff3cd;
     padding: 4px 8px;
@@ -760,13 +801,13 @@ textarea {
 .lightning-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 10px;
     align-items: start;
 }
 
 .lightning-invoice-display {
     background: #ffffff;
-    padding: 15px;
+    padding: 10px;
     font-family: 'Courier New', monospace;
     font-size: 12px;
     word-break: break-all;
@@ -785,15 +826,6 @@ textarea {
     position: relative;
     min-height: 350px;
 }
-
-.qr-code-container h4 {
-    color: #ff9900;
-    margin-bottom: 15px;
-    font-size: 1.1em;
-    text-align: center;
-}
-
-
 
 .qr-code-container bitcoin-qr {
     position: absolute !important;
