@@ -527,11 +527,11 @@ class InvoiceGenerator {
             console.log('Window width:', window.innerWidth);
             
             if (window.innerWidth <= 480) {
-                // Small mobile (480px / 3 ≈ 160px, using 150px)
+                // Small mobile - using 150px
                 qrSize = 150;
                 console.log('Using small mobile size: 150px');
             } else if (window.innerWidth <= 768) {
-                // Regular mobile (768px / 3 ≈ 256px, using 200px)
+                // Regular mobile - using 200px
                 qrSize = 200;
                 console.log('Using regular mobile size: 200px');
             } else {
