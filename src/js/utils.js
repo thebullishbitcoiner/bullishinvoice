@@ -100,9 +100,9 @@ export function showNotification(message, type = 'success') {
     
     // Set background color based on type
     const colors = {
-        success: '#10b981',
-        error: '#ef4444',
-        warning: '#f59e0b'
+        success: '#ff9900',
+        error: '#ff9900',
+        warning: '#ff9900'
     };
     notification.style.backgroundColor = colors[type] || colors.success;
     

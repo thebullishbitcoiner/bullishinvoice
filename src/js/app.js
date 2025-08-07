@@ -29,10 +29,13 @@ import {
     printInvoice 
 } from './export.js';
 
+import { LightningPayment } from './lightning-payment.js';
+
 class InvoiceGenerator {
     constructor() {
         this.settings = loadSettings();
         this.autoSaveTimer = null;
+        this.lightningPayment = new LightningPayment();
         this.init();
         this.loadVersion();
     }
@@ -98,6 +101,8 @@ class InvoiceGenerator {
                 }
             });
         }
+
+
 
         // Initial QR code size update
         this.updateQRCodeSize();
@@ -516,6 +521,8 @@ class InvoiceGenerator {
             // Fallback to default version
         }
     }
+
+
 
     updateQRCodeSize() {
         const qrElement = document.getElementById('lightningQR');

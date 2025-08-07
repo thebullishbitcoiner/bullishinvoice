@@ -1,6 +1,10 @@
 // Export functionality for PDF and image generation
 
 import { showNotification } from './utils.js';
+import { LightningPayment } from './lightning-payment.js';
+
+// Initialize Lightning payment handler
+const lightningPayment = new LightningPayment();
 
 /**
  * Export invoice as image
@@ -8,13 +12,17 @@ import { showNotification } from './utils.js';
  * @param {string} filename - Filename for the export
  */
 export async function exportAsImage(element, filename) {
-    try {
-        // Show loading state
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '⏳ Generating...';
-        btn.disabled = true;
+    // Handle the export through Lightning payment
+    await lightningPayment.handleExportPayment(performImageExport, [element, filename]);
+}
 
+/**
+ * Perform the actual image export (called after payment)
+ * @param {HTMLElement} element - Element to export
+ * @param {string} filename - Filename for the export
+ */
+async function performImageExport(element, filename) {
+    try {
         // Import html2canvas dynamically
         const html2canvas = (await import('html2canvas')).default;
         
@@ -36,20 +44,11 @@ export async function exportAsImage(element, filename) {
         link.click();
         document.body.removeChild(link);
 
-        // Restore button
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-
         showNotification('Image exported successfully!', 'success');
 
     } catch (error) {
         console.error('Error exporting image:', error);
         showNotification('Error exporting image. Please try again.', 'error');
-
-        // Restore button
-        const btn = event.target;
-        btn.innerHTML = 'Export Image';
-        btn.disabled = false;
     }
 }
 
@@ -59,13 +58,17 @@ export async function exportAsImage(element, filename) {
  * @param {string} filename - Filename for the export
  */
 export async function exportAsPDF(element, filename) {
-    try {
-        // Show loading state
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '⏳ Generating...';
-        btn.disabled = true;
+    // Handle the export through Lightning payment
+    await lightningPayment.handleExportPayment(performPDFExport, [element, filename]);
+}
 
+/**
+ * Perform the actual PDF export (called after payment)
+ * @param {HTMLElement} element - Element to export
+ * @param {string} filename - Filename for the export
+ */
+async function performPDFExport(element, filename) {
+    try {
         // Import libraries dynamically
         const html2canvas = (await import('html2canvas')).default;
         const { jsPDF } = await import('jspdf');
@@ -113,20 +116,11 @@ export async function exportAsPDF(element, filename) {
 
         pdf.save(`${filename}.pdf`);
 
-        // Restore button
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-
         showNotification('PDF exported successfully!', 'success');
 
     } catch (error) {
         console.error('Error exporting PDF:', error);
         showNotification('Error exporting PDF. Please try again.', 'error');
-
-        // Restore button
-        const btn = event.target;
-        btn.innerHTML = 'Export PDF';
-        btn.disabled = false;
     }
 }
 
