@@ -77,27 +77,27 @@ class InvoiceGenerator {
 
         if (exportPdfBtn) {
             exportPdfBtn.addEventListener('click', () => {
-                const element = document.getElementById('invoicePreview');
+            const element = document.getElementById('invoicePreview');
                 if (element) {
                     exportAsPDF(element, 'invoice');
                 }
-            });
+        });
         }
 
         if (exportImageBtn) {
             exportImageBtn.addEventListener('click', () => {
-                const element = document.getElementById('invoicePreview');
+            const element = document.getElementById('invoicePreview');
                 if (element) {
                     exportAsImage(element, 'invoice');
                 }
-            });
+        });
         }
 
         if (printBtn) {
             printBtn.addEventListener('click', () => {
-                const element = document.getElementById('invoicePreview');
+            const element = document.getElementById('invoicePreview');
                 if (element) {
-                    printInvoice(element);
+            printInvoice(element);
                 }
             });
         }
@@ -106,11 +106,7 @@ class InvoiceGenerator {
 
         // Initial QR code size update
         this.updateQRCodeSize();
-        
-        // Window resize listener for QR code size
-        window.addEventListener('resize', () => {
-            this.updateQRCodeSize();
-        });
+        window.addEventListener('resize', () => this.updateQRCodeSize());
 
         // Lightning invoice validation on blur
         const lightningInputBlur = document.getElementById('lightningInvoice');
@@ -124,16 +120,16 @@ class InvoiceGenerator {
         const generateInvoiceNumberBtn = document.getElementById('generateInvoiceNumberBtn');
         if (generateInvoiceNumberBtn) {
             generateInvoiceNumberBtn.addEventListener('click', () => {
-                this.generateNewInvoiceNumber();
-            });
+            this.generateNewInvoiceNumber();
+        });
         }
 
         // Clear form button
         const clearFormBtn = document.getElementById('clearFormBtn');
         if (clearFormBtn) {
             clearFormBtn.addEventListener('click', () => {
-                this.clearForm();
-            });
+            this.clearForm();
+        });
         }
     }
 
@@ -256,7 +252,6 @@ class InvoiceGenerator {
         if (lightningSection) {
             if (data.lightningInvoice.trim()) {
                 lightningSection.style.display = 'block';
-                document.getElementById('previewLightningInvoice').textContent = data.lightningInvoice;
                 
                 // Decode and display Lightning invoice details
                 this.updateLightningDetails(data.lightningInvoice);
@@ -297,8 +292,8 @@ class InvoiceGenerator {
             try {
                 const decoded = await decodeLightningInvoice(input.value);
                 if (decoded) {
-                    input.classList.add('input-success');
-                    this.removeError(input);
+            input.classList.add('input-success');
+            this.removeError(input);
                 } else {
                     input.classList.add('input-error');
                     this.showError(input, 'Invalid Lightning Network invoice');
@@ -526,31 +521,11 @@ class InvoiceGenerator {
 
     updateQRCodeSize() {
         const qrElement = document.getElementById('lightningQR');
-        
-        if (qrElement) {
-            // Set QR code size based on screen size (about 1/3 of breakpoint)
-            let qrSize = 300; // Default desktop size
-            
-            console.log('Window width:', window.innerWidth);
-            
-            if (window.innerWidth <= 480) {
-                // Small mobile - using 150px
-                qrSize = 150;
-                console.log('Using small mobile size: 150px');
-            } else if (window.innerWidth <= 768) {
-                // Regular mobile - using 200px
-                qrSize = 200;
-                console.log('Using regular mobile size: 200px');
-            } else {
-                console.log('Using desktop size: 300px');
-            }
-            
-            console.log('Setting QR size to:', qrSize);
-            
-            // Update width and height attributes
-            qrElement.setAttribute('width', qrSize);
-            qrElement.setAttribute('height', qrSize);
-        }
+        if (!qrElement) return;
+        const calculatedSize = Math.min(Math.floor(window.innerWidth / 3), 300);
+        const size = Math.round(calculatedSize / 100) * 100;
+        qrElement.setAttribute('width', size);
+        qrElement.setAttribute('height', size);
     }
 
     updateQRCode(lightningInvoice) {
@@ -560,7 +535,7 @@ class InvoiceGenerator {
             // Update the lightning attribute to generate new QR code
             qrElement.setAttribute('lightning', lightningInvoice);
             
-            // Also update the size
+            // Update dynamic size
             this.updateQRCodeSize();
         }
     }

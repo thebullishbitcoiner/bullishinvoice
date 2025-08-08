@@ -21,7 +21,7 @@ class LightningPayment {
             const ln = new LightningAddress('bullish@blitz-wallet.com');
             await ln.fetch();
             
-            const invoice = await ln.requestInvoice({ satoshi: 21 });
+            const invoice = await ln.requestInvoice({ satoshi: 20 });
             
             console.log('Invoice created:', {
                 paymentRequest: invoice.paymentRequest,
@@ -221,8 +221,11 @@ class LightningPayment {
                 if (isPaid) {
                     showNotification('Payment received! Processing export...', 'success');
                     console.log('Payment verified successfully!');
-                    if (this.currentInvoice.preimage) {
-                        console.log(`Preimage: ${this.currentInvoice.preimage}`);
+                    
+                    // Store preimage before clearing currentInvoice
+                    const preimage = this.currentInvoice?.preimage;
+                    if (preimage) {
+                        console.log(`Preimage: ${preimage}`);
                     }
 
                     setTimeout(async () => {
