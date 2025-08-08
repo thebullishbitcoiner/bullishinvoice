@@ -6,7 +6,7 @@ const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
 
 export default defineConfig({
   root: 'src',
-  base: process.env.NODE_ENV === 'production' ? '/bullishinvoice/' : '/',
+  base: '/bullishinvoice/',
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version)
   },
