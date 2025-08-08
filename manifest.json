@@ -1,0 +1,17 @@
+{
+  "name": "bullishInvoice",
+  "short_name": "bullishInvoice",
+  "description": "A modern Lightning Network invoice generator",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ff9900",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
