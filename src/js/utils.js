@@ -20,34 +20,7 @@ export function generateInvoiceNumber(prefix = 'INV') {
     return `${prefix}-${timestamp}-${random}`;
 }
 
-/**
- * Decode Lightning Network invoice using alby-tools
- * @param {string} invoice - Lightning invoice to decode
- * @returns {Object|null} Decoded invoice data or null if invalid
- */
-export async function decodeLightningInvoice(invoice) {
-    if (!invoice || !invoice.trim()) return null;
-    
-    try {
-        const { decodeInvoice } = await import('@getalby/lightning-tools');
-        const decoded = decodeInvoice(invoice.trim());
-        return decoded;
-    } catch (error) {
-        console.error('Error decoding Lightning invoice:', error);
-        return null;
-    }
-}
 
-/**
- * Validate Lightning Network invoice format
- * @param {string} invoice - Lightning invoice to validate
- * @returns {boolean} True if valid format
- */
-export function validateLightningInvoice(invoice) {
-    if (!invoice) return true; // Empty is valid
-    const lightningRegex = /^lnbc[0-9]+[munp]?[0-9]*[a-z0-9]+$/i;
-    return lightningRegex.test(invoice.trim());
-}
 
 /**
  * Get default dates for invoice

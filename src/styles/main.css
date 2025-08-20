@@ -98,6 +98,17 @@ body {
         border-radius: 5px;
     }
 
+    /* Lightning address row mobile styles */
+    .lightning-address-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .lightning-address-row .btn {
+        width: 100%;
+        min-width: auto;
+    }
+
     .preview-panel {
         position: static;
         order: 1;
@@ -245,19 +256,7 @@ body {
         padding: 0.3in;
     }
 
-    .qr-code-container {
-        min-height: 250px;
-        text-align: center;
-        padding: 10px;
-    }
 
-    .qr-code-container bitcoin-qr {
-        position: static !important;
-        transform: none !important;
-        width: 200px !important;
-        height: 200px !important;
-        margin: 0 auto !important;
-    }
 
     input,
     textarea,
@@ -540,6 +539,24 @@ textarea {
     order: 2;
 }
 
+.lightning-address-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.lightning-address-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.lightning-address-row .btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+    width: auto;
+    height: auto;
+}
+
 .invoice-preview {
     background: #ffffff;
     color: #000000;
@@ -712,45 +729,26 @@ textarea {
     align-items: start;
 }
 
-.qr-code-container {
+#lightningSection {
+    margin: 20px 0;
+    padding-top: 20px;
+    border-top: 2px solid #ff9900;
+}
+
+#lightningSection h4 {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #ff9900;
+}
+
+#lightningExpiry {
+    font-size: 0.9em;
+    color: #666;
+}
+
+#qrCodeContainer {
     text-align: center;
-    padding: 10px;
-    background: #ffffff;
-    border: 1px solid #dee2e6;
-    position: relative;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-}
-
-.qr-code-container bitcoin-qr {
-    position: static !important;
-    transform: none !important;
-    max-width: none !important;
-    width: auto !important;
-    height: auto !important;
-    margin: 0 auto !important;
-}
-
-.qr-code-container bitcoin-qr::part(qr-code) {
-    margin: 0 auto !important;
-    display: block !important;
-    width: auto !important;
-    height: auto !important;
-    max-width: none !important;
-    text-align: center !important;
-}
-
-.qr-code-container bitcoin-qr svg,
-.qr-code-container bitcoin-qr canvas {
-    margin: 0 auto !important;
-    display: block !important;
-    width: auto !important;
-    height: auto !important;
-    max-width: none !important;
-    text-align: center !important;
 }
 
 .action-buttons {

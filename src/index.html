@@ -81,8 +81,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="lightningInvoice">Lightning Network Invoice</label>
-                    <textarea id="lightningInvoice" placeholder="lnbc1u1p..."></textarea>
+                    <label for="lightningAddress">Lightning Address</label>
+                    <div class="lightning-address-row">
+                        <input type="text" id="lightningAddress" placeholder="hello@getalby.com">
+                        <button type="button" class="btn btn-primary" id="generateQRBtn">
+                            Generate QR
+                        </button>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -97,9 +102,6 @@
                     </button>
                     <button type="button" class="btn btn-primary" id="exportImageBtn">
                         Export Image
-                    </button>
-                    <button type="button" class="btn btn-primary" id="printBtn">
-                        Print
                     </button>
                 </div>
             </form>
@@ -157,24 +159,19 @@
                     </div>
                 </div>
 
-                <div class="lightning-section" id="lightningSection" style="display: none;">
-                    <h4 class="lightning-header">
-                        <span>Lightning Payment</span>
-                        <span class="lightning-expiry" id="lightningExpiry"></span>
-                    </h4>
-                    <div class="lightning-content">
-                        <div class="qr-code-container" id="qrCodeContainer" style="display: none;">
-                            <bitcoin-qr 
-                                id="lightningQR"
-                                lightning=""
-                                 width="300"
-                                 height="300"
-                                type="svg"
-                                dots-color="#ff9900"
-                                background-color="#ffffff"
-                                corners-square-color="#ff9900">
-                            </bitcoin-qr>
-                        </div>
+                <div id="lightningSection" style="display: none;">
+                    <h4>Lightning Payment</h4>
+                    <div id="lightningExpiry"></div>
+                    <div id="qrCodeContainer" style="display: none;">
+                        <bitcoin-qr 
+                            lightning=""
+                            type="svg"
+                            dots-color="#ff9900"
+                            background-color="transparent"
+                            corners-square-color="#ff9900"
+                            poll-interval="3000"
+                            is-polling="true">
+                        </bitcoin-qr>
                     </div>
                 </div>
 

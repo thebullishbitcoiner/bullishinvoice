@@ -3,10 +3,7 @@
 import { 
     formatNumber, 
     generateInvoiceNumber, 
-    validateLightningInvoice, 
-    decodeLightningInvoice,
     getDefaultDates, 
-    calculateTotal,
     showNotification,
     debounce,
     sanitizeHTML
@@ -18,15 +15,12 @@ import {
     saveTemplate, 
     loadTemplate, 
     getTemplateNames,
-    deleteTemplate,
-    loadSettings,
-    saveSettings
+    loadSettings
 } from './storage.js';
 
 import { 
     exportAsImage, 
-    exportAsPDF, 
-    printInvoice 
+    exportAsPDF
 } from './export.js';
 
 import { LightningPayment } from './lightning-payment.js';
@@ -36,6 +30,7 @@ class InvoiceGenerator {
         this.settings = loadSettings();
         this.autoSaveTimer = null;
         this.lightningPayment = new LightningPayment();
+        this.currentLightningInvoice = '';
         this.init();
         this.loadVersion();
     }
@@ -59,21 +54,25 @@ class InvoiceGenerator {
             });
         });
 
-        // Lightning invoice validation
-        const lightningInput = document.getElementById('lightningInvoice');
-        if (lightningInput) {
-            lightningInput.addEventListener('input', async (e) => {
-                const isValid = await this.validateLightningInvoice(e.target);
-                if (isValid) {
-                    this.updateQRCode(e.target.value);
-                }
+        // Lightning address input
+        const lightningAddressInput = document.getElementById('lightningAddress');
+        if (lightningAddressInput) {
+            lightningAddressInput.addEventListener('input', debounce(async (e) => {
+                await this.validateLightningAddress(e.target);
+            }, 500));
+        }
+
+        // Generate QR button
+        const generateQRBtn = document.getElementById('generateQRBtn');
+        if (generateQRBtn) {
+            generateQRBtn.addEventListener('click', async () => {
+                await this.generateInvoiceFromAddress();
             });
         }
 
         // Export buttons
         const exportPdfBtn = document.getElementById('exportPdfBtn');
         const exportImageBtn = document.getElementById('exportImageBtn');
-        const printBtn = document.getElementById('printBtn');
 
         if (exportPdfBtn) {
             exportPdfBtn.addEventListener('click', () => {
@@ -93,26 +92,17 @@ class InvoiceGenerator {
         });
         }
 
-        if (printBtn) {
-            printBtn.addEventListener('click', () => {
-            const element = document.getElementById('invoicePreview');
-                if (element) {
-            printInvoice(element);
-                }
-            });
-        }
-
 
 
         // Initial QR code size update
         this.updateQRCodeSize();
         window.addEventListener('resize', () => this.updateQRCodeSize());
 
-        // Lightning invoice validation on blur
-        const lightningInputBlur = document.getElementById('lightningInvoice');
-        if (lightningInputBlur) {
-            lightningInputBlur.addEventListener('blur', async (e) => {
-                await this.validateLightningInvoice(e.target);
+        // Lightning address validation on blur
+        const lightningAddressBlur = document.getElementById('lightningAddress');
+        if (lightningAddressBlur) {
+            lightningAddressBlur.addEventListener('blur', async (e) => {
+                await this.validateLightningAddress(e.target);
             });
         }
 
@@ -143,7 +133,8 @@ class InvoiceGenerator {
             fromName: document.getElementById('fromName')?.value || '',
             toName: document.getElementById('toName')?.value || '',
             lineItems: lineItems,
-            lightningInvoice: document.getElementById('lightningInvoice')?.value || '',
+            lightningAddress: document.getElementById('lightningAddress')?.value || '',
+            lightningInvoice: this.currentLightningInvoice || '',
             notes: document.getElementById('notes')?.value || '',
             total: total
         };
@@ -178,7 +169,8 @@ class InvoiceGenerator {
         if (data.invoiceDate) document.getElementById('invoiceDate').value = data.invoiceDate;
         if (data.fromName) document.getElementById('fromName').value = data.fromName;
         if (data.toName) document.getElementById('toName').value = data.toName;
-        if (data.lightningInvoice) document.getElementById('lightningInvoice').value = data.lightningInvoice;
+        if (data.lightningAddress) document.getElementById('lightningAddress').value = data.lightningAddress;
+        if (data.lightningInvoice) this.currentLightningInvoice = data.lightningInvoice;
         if (data.notes) document.getElementById('notes').value = data.notes;
         
         // Handle line items
@@ -194,7 +186,6 @@ class InvoiceGenerator {
         
         // Keep the first item and clear its values
         if (existingItems.length > 0) {
-            const firstItem = existingItems[0];
             document.getElementById('description-1').value = '';
             document.getElementById('quantity-1').value = '1';
             document.getElementById('rate-1').value = '';
@@ -250,7 +241,7 @@ class InvoiceGenerator {
         // Lightning invoice section
         const lightningSection = document.getElementById('lightningSection');
         if (lightningSection) {
-            if (data.lightningInvoice.trim()) {
+            if (data.lightningInvoice && data.lightningInvoice.trim()) {
                 lightningSection.style.display = 'block';
                 
                 // Decode and display Lightning invoice details
@@ -279,31 +270,96 @@ class InvoiceGenerator {
         }
     }
 
-    async validateLightningInvoice(input) {
-        const isValid = validateLightningInvoice(input.value);
+    async validateLightningAddress(input) {
+        const address = input.value.trim();
         
         input.classList.remove('input-error', 'input-success');
         
-        if (input.value.trim() && !isValid) {
-            input.classList.add('input-error');
-            this.showError(input, 'Invalid Lightning Network invoice format');
-        } else if (input.value.trim() && isValid) {
-            // Try to decode the invoice for additional validation
-            try {
-                const decoded = await decodeLightningInvoice(input.value);
-                if (decoded) {
+        // Don't validate if empty or too short (less than 3 characters)
+        if (!address || address.length < 3) {
+            this.removeError(input);
+            return false;
+        }
+        
+        // Basic lightning address validation (username@domain format)
+        const lightningAddressRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const isValid = lightningAddressRegex.test(address);
+        
+        if (!isValid) {
+            // Only show error if the address looks complete (contains @ and .)
+            if (address.includes('@') && address.includes('.')) {
+                input.classList.add('input-error');
+                this.showError(input, 'Invalid Lightning Address format (e.g., hello@getalby.com)');
+            }
+        } else {
             input.classList.add('input-success');
             this.removeError(input);
-                } else {
-                    input.classList.add('input-error');
-                    this.showError(input, 'Invalid Lightning Network invoice');
-                }
-            } catch (error) {
-                input.classList.add('input-error');
-                this.showError(input, 'Invalid Lightning Network invoice');
-            }
         }
-        return isValid; // Return the validation result
+        
+        return isValid;
+    }
+
+    async generateInvoiceFromAddress() {
+        const addressInput = document.getElementById('lightningAddress');
+        const address = addressInput.value.trim();
+        
+        if (!address) {
+            showNotification('Please enter a Lightning Address first', 'warning');
+            return;
+        }
+        
+        const isValid = await this.validateLightningAddress(addressInput);
+        if (!isValid) {
+            showNotification('Please enter a valid Lightning Address', 'warning');
+            return;
+        }
+        
+        const total = this.getFormData().total;
+        if (total <= 0) {
+            showNotification('Please add line items with a total greater than 0', 'warning');
+            return;
+        }
+        
+        try {
+            showNotification('Generating Lightning invoice...', 'info');
+            
+            // Import lightning-tools
+            const { LightningAddress } = await import('@getalby/lightning-tools');
+            
+            // Create Lightning Address instance
+            const ln = new LightningAddress(address);
+            await ln.fetch();
+            
+            // Request invoice for the total amount with 24-hour expiry
+            const invoice = await ln.requestInvoice({ 
+                satoshi: total,
+                description: `Invoice ${document.getElementById('invoiceNumber')?.value || 'INV-001'}`,
+                expiry: 86400 // 24 hours in seconds
+            });
+            
+            // Store the generated invoice
+            this.currentLightningInvoice = invoice.paymentRequest;
+            
+            // Log invoice details for debugging
+            console.log('Generated Lightning Invoice:', {
+                paymentRequest: invoice.paymentRequest,
+                paymentHash: invoice.paymentHash,
+                satoshi: invoice.satoshi,
+                description: invoice.description,
+                timestamp: invoice.timestamp,
+                expiry: invoice.expiry,
+                invoice: invoice
+            });
+            
+            // Update the preview to show the QR code
+            this.updatePreview();
+            
+            showNotification('Lightning invoice generated successfully!', 'success');
+            
+        } catch (error) {
+            console.error('Error generating Lightning invoice:', error);
+            showNotification('Failed to generate Lightning invoice. Please check the address and try again.', 'error');
+        }
     }
 
     showError(input, message) {
@@ -340,7 +396,8 @@ class InvoiceGenerator {
             document.getElementById('description').value = '';
             document.getElementById('quantity').value = '1';
             document.getElementById('rate').value = '';
-            document.getElementById('lightningInvoice').value = '';
+            document.getElementById('lightningAddress').value = '';
+            this.currentLightningInvoice = '';
             document.getElementById('notes').value = '';
 
             this.updatePreview();
@@ -464,7 +521,7 @@ class InvoiceGenerator {
                     ${templateList}
                 </select>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="
+                    <button id="cancelTemplateBtn" style="
                         padding: 10px 20px;
                         background: #6366f1;
                         color: white;
@@ -472,7 +529,7 @@ class InvoiceGenerator {
                         border-radius: 8px;
                         cursor: pointer;
                     ">Cancel</button>
-                    <button onclick="app.loadSelectedTemplate()" style="
+                    <button id="loadTemplateBtn" style="
                         padding: 10px 20px;
                         background: #10b981;
                         color: white;
@@ -485,6 +542,23 @@ class InvoiceGenerator {
         `;
 
         document.body.appendChild(dialog);
+        
+        // Add event listeners
+        const cancelBtn = dialog.querySelector('#cancelTemplateBtn');
+        const loadBtn = dialog.querySelector('#loadTemplateBtn');
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                dialog.remove();
+            });
+        }
+        
+        if (loadBtn) {
+            loadBtn.addEventListener('click', () => {
+                this.loadSelectedTemplate();
+                dialog.remove();
+            });
+        }
     }
 
     loadSelectedTemplate() {
@@ -498,9 +572,6 @@ class InvoiceGenerator {
             this.saveFormData();
             showNotification(`Template "${templateName}" loaded successfully!`, 'success');
         }
-        
-        // Close dialog
-        document.querySelector('div[style*="position: fixed"]').remove();
     }
 
     loadVersion() {
@@ -520,7 +591,7 @@ class InvoiceGenerator {
 
 
     updateQRCodeSize() {
-        const qrElement = document.getElementById('lightningQR');
+        const qrElement = document.querySelector('#qrCodeContainer bitcoin-qr');
         if (!qrElement) return;
         const calculatedSize = Math.min(Math.floor(window.innerWidth / 3), 300);
         const size = Math.round(calculatedSize / 100) * 100;
@@ -529,20 +600,25 @@ class InvoiceGenerator {
     }
 
     updateQRCode(lightningInvoice) {
-        const qrElement = document.getElementById('lightningQR');
+        const qrElement = document.querySelector('#qrCodeContainer bitcoin-qr');
         
         if (qrElement && lightningInvoice) {
             // Update the lightning attribute to generate new QR code
             qrElement.setAttribute('lightning', lightningInvoice);
+            qrElement.setAttribute('is-polling', 'true');
             
             // Update dynamic size
             this.updateQRCodeSize();
         }
     }
 
+
+
     async updateLightningDetails(lightningInvoice) {
         try {
-            const decoded = await decodeLightningInvoice(lightningInvoice);
+            // Import lightning-tools directly
+            const { decodeInvoice } = await import('@getalby/lightning-tools');
+            const decoded = decodeInvoice(lightningInvoice);
             const expiryElement = document.getElementById('lightningExpiry');
             
             if (decoded && expiryElement) {

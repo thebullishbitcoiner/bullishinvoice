@@ -1,7 +1,7 @@
 {
   "name": "bullishinvoice",
   "private": true,
-  "version": "0.0.12",
+  "version": "0.0.13",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
+    "@getalby/bitcoin-connect": "^3.9.3",
     "@getalby/lightning-tools": "^5.2.1",
     "bitcoin-qr": "^1.4.1",
     "html2canvas": "^1.4.1",
