@@ -52,10 +52,10 @@ body {
 }
 
 .version {
-    font-size: 0.5em;
+    font-size: 0.4em;
     color: rgba(255, 255, 255, 0.4);
     font-weight: normal;
-    margin-left: 4px;
+    margin-bottom: 4px;
 }
 
 /* Mobile Responsive Styles */

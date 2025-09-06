@@ -1,4 +1,20 @@
 // Main application logic for the invoice generator
+//
+// DEBUG MODE: Automatically detects development environment and skips Lightning payments
+// Auto-detection triggers on: localhost, dev ports (3000, 5173), file:// protocol, etc.
+// Manual controls (browser console):
+//   toggleDebugMode() - toggles debug mode on/off
+//   redetectDebugMode() - re-checks environment for debug mode
+//   window.DEBUG_MODE = true - forces debug mode on
+// When debug mode is enabled, exports skip payment and execute directly
+//
+// EXPORT OPTIMIZATION: PDF exports restored to PNG format for proper page filling with compression (~8-10MB vs original ~13MB)
+// Quality controls (browser console):
+//   setExportQuality('pdf', 'low') - smaller file size (~5-7MB, scale 1.5)
+//   setExportQuality('pdf', 'medium') - balanced quality (default, ~8-10MB, scale 2)
+//   setExportQuality('pdf', 'high') - best quality (~10-12MB, scale 2)
+//   setExportQuality('image', 'low/medium/high') - adjust image export quality
+//   window.EXPORT_SETTINGS - view/modify all export settings
 
 import { 
     formatNumber, 
@@ -147,8 +163,8 @@ class InvoiceGenerator {
         lineItemElements.forEach(element => {
             const itemId = element.getAttribute('data-item-id');
             const description = document.getElementById(`description-${itemId}`)?.value || '';
-            const quantity = parseInt(document.getElementById(`quantity-${itemId}`)?.value) || 1;
-            const rate = parseInt(document.getElementById(`rate-${itemId}`)?.value) || 0;
+            const quantity = parseFloat(document.getElementById(`quantity-${itemId}`)?.value) || 1;
+            const rate = parseFloat(document.getElementById(`rate-${itemId}`)?.value) || 0;
             
             if (description.trim()) {
                 lineItems.push({

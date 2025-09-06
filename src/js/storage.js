@@ -1,9 +1,9 @@
 // Storage management for form persistence and templates
 
 const STORAGE_KEYS = {
-    FORM_DATA: 'bullish_invoice_form_data',
-    TEMPLATES: 'bullish_invoice_templates',
-    SETTINGS: 'bullish_invoice_settings'
+    FORM_DATA: 'bullishinvoice_form_data',
+    TEMPLATES: 'bullishinvoice_templates',
+    SETTINGS: 'bullishinvoice_settings'
 };
 
 /**
@@ -204,4 +204,4 @@ export function importData(jsonData) {
         console.error('Error importing data:', error);
         return false;
     }
-} 
+}

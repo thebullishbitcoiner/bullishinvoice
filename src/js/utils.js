@@ -41,7 +41,7 @@ export function getDefaultDates() {
  * @returns {number} Total amount
  */
 export function calculateTotal(quantity, rate) {
-    return (parseInt(quantity) || 0) * (parseInt(rate) || 0);
+    return (parseFloat(quantity) || 0) * (parseFloat(rate) || 0);
 }
 
 /**

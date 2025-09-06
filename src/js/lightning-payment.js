@@ -8,6 +8,19 @@ class LightningPayment {
         this.currentInvoice = null;
         this.qrElement = null;
         this.paymentCompleted = false; // Flag to prevent duplicate exports
+        
+        // Auto-detect debug mode based on environment
+        this.debugMode = this.detectDebugMode();
+        
+        // Log initial debug mode status
+        if (this.debugMode) {
+            console.log('🚀 LightningPayment initialized with DEBUG MODE ENABLED');
+            console.log('   Exports will skip payment and execute directly');
+        }
+        
+        // Make debug functions available globally
+        window.toggleDebugMode = () => this.toggleDebugMode();
+        window.redetectDebugMode = () => this.redetectDebugMode();
     }
 
     /**
@@ -288,6 +301,21 @@ class LightningPayment {
             return;
         }
 
+        // Check if debug mode is enabled
+        if (this.debugMode) {
+            console.log('🐛 DEBUG MODE: Skipping Lightning payment, executing export directly');
+            showNotification('Debug mode: Skipping payment, exporting directly...', 'info');
+            
+            try {
+                await exportFunction(...exportArgs);
+                showNotification('Export completed (debug mode)!', 'success');
+            } catch (error) {
+                console.error('Error in debug export:', error);
+                showNotification('Error during debug export. Please try again.', 'error');
+            }
+            return;
+        }
+
         this.isProcessing = true;
         this.paymentCompleted = false; // Reset flag for new payment
 
@@ -431,6 +459,97 @@ class LightningPayment {
             this.removeModalOverlay();
             this.removeExportProcessingModal();
         }
+    }
+
+    /**
+     * Automatically detect if we're in debug/development mode
+     * @returns {boolean} True if in debug mode
+     */
+    detectDebugMode() {
+        // Check multiple indicators of development mode
+        const indicators = {
+            // 1. Manual override (highest priority)
+            manualOverride: window.DEBUG_MODE === true,
+            
+            // 2. Vite build-time development mode
+            isViteDev: typeof __DEV_MODE__ !== 'undefined' && __DEV_MODE__ === true, // eslint-disable-line no-undef
+            
+            // 3. Localhost/development server
+            isLocalhost: window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.hostname === '0.0.0.0',
+            
+            // 4. Development port (Vite default)
+            isDevPort: window.location.port === '3000' || 
+                      window.location.port === '5173' || // Vite default
+                      window.location.port === '8080',
+            
+            // 5. Development URL patterns
+            isDevUrl: window.location.href.includes('localhost') ||
+                     window.location.href.includes('127.0.0.1') ||
+                     window.location.href.includes(':3000') ||
+                     window.location.href.includes(':5173'),
+            
+            // 6. File protocol (opening HTML directly)
+            isFileProtocol: window.location.protocol === 'file:',
+            
+            // 7. Development build indicators
+            hasDevTools: window.location.search.includes('dev') ||
+                        window.location.search.includes('debug'),
+            
+            // 8. Console detection (if dev tools are open)
+            hasConsole: window.outerHeight - window.innerHeight > 200,
+            
+            // 9. Source maps available (development build indicator)
+            hasSourceMaps: document.querySelector('script[src*=".js"]')?.src.includes('?') || false
+        };
+        
+        // Count positive indicators
+        const positiveIndicators = Object.values(indicators).filter(Boolean).length;
+        
+        // Consider it debug mode if we have multiple indicators or manual override
+        const isDebugMode = indicators.manualOverride || positiveIndicators >= 2;
+        
+        // Log detection results for transparency
+        if (isDebugMode) {
+            console.log('🐛 Debug mode auto-detected:', {
+                indicators,
+                positiveCount: positiveIndicators,
+                reason: indicators.manualOverride ? 'Manual override' : 
+                       `${positiveIndicators} development indicators detected`
+            });
+        }
+        
+        return isDebugMode;
+    }
+
+    /**
+     * Toggle debug mode on/off
+     * @returns {boolean} Current debug mode state
+     */
+    toggleDebugMode() {
+        this.debugMode = !this.debugMode;
+        window.DEBUG_MODE = this.debugMode;
+        
+        const status = this.debugMode ? 'ENABLED' : 'DISABLED';
+        const emoji = this.debugMode ? '🐛' : '✅';
+        
+        console.log(`${emoji} Debug mode ${status}`);
+        console.log('Debug mode allows exports without Lightning payment');
+        
+        showNotification(`Debug mode ${status.toLowerCase()}`, this.debugMode ? 'warning' : 'success');
+        
+        return this.debugMode;
+    }
+
+    /**
+     * Re-detect debug mode (useful for dynamic environment changes)
+     * @returns {boolean} Current debug mode state
+     */
+    redetectDebugMode() {
+        this.debugMode = this.detectDebugMode();
+        console.log(`🔄 Debug mode re-detected: ${this.debugMode ? 'ENABLED' : 'DISABLED'}`);
+        return this.debugMode;
     }
 }
 

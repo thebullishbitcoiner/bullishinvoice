@@ -1,3 +1,4 @@
+/* eslint-env node */
 import { defineConfig } from 'vite'
 import { readFileSync } from 'fs'
 
@@ -8,7 +9,8 @@ export default defineConfig({
   root: 'src',
   base: '/bullishinvoice/',
   define: {
-    __APP_VERSION__: JSON.stringify(packageJson.version)
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+    __DEV_MODE__: JSON.stringify(process.env.NODE_ENV === 'development')
   },
   server: {
     port: 3000,

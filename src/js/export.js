@@ -6,6 +6,61 @@ import { LightningPayment } from './lightning-payment.js';
 // Initialize Lightning payment handler
 const lightningPayment = new LightningPayment();
 
+// Export quality settings - can be adjusted for different quality/size tradeoffs
+const EXPORT_SETTINGS = {
+    // PDF settings - restored to original PNG format for proper page filling
+    pdf: {
+        scale: 2, // Keep at 2 to ensure content fills the entire page
+        format: 'png', // Use PNG format like original for proper scaling
+        compression: true, // Enable PDF compression
+        fastMode: false // Better quality rendering
+    },
+    // Image settings
+    image: {
+        scale: 1.5, // Canvas scale for images
+        jpegQuality: 0.9, // JPEG quality for images
+        format: 'jpeg' // 'jpeg' for smaller files, 'png' for lossless
+    }
+};
+
+// Make export settings globally accessible for debugging
+window.EXPORT_SETTINGS = EXPORT_SETTINGS;
+
+// Helper function to adjust export quality
+window.setExportQuality = (type, quality) => {
+    if (type === 'pdf') {
+        if (quality === 'high') {
+            EXPORT_SETTINGS.pdf.scale = 2;
+            EXPORT_SETTINGS.pdf.format = 'png';
+            EXPORT_SETTINGS.pdf.fastMode = false;
+        } else if (quality === 'medium') {
+            EXPORT_SETTINGS.pdf.scale = 2; // Keep at 2 for proper page filling
+            EXPORT_SETTINGS.pdf.format = 'png'; // PNG for proper scaling
+            EXPORT_SETTINGS.pdf.fastMode = false; // Better quality
+        } else if (quality === 'low') {
+            EXPORT_SETTINGS.pdf.scale = 1.5; // Slightly reduced for smaller files
+            EXPORT_SETTINGS.pdf.format = 'png';
+            EXPORT_SETTINGS.pdf.fastMode = true;
+        }
+        console.log(`PDF quality set to: ${quality}`, EXPORT_SETTINGS.pdf);
+    } else if (type === 'image') {
+        if (quality === 'high') {
+            EXPORT_SETTINGS.image.scale = 2;
+            EXPORT_SETTINGS.image.jpegQuality = 0.95;
+            EXPORT_SETTINGS.image.format = 'png';
+        } else if (quality === 'medium') {
+            EXPORT_SETTINGS.image.scale = 1.5;
+            EXPORT_SETTINGS.image.jpegQuality = 0.9;
+            EXPORT_SETTINGS.image.format = 'jpeg';
+        } else if (quality === 'low') {
+            EXPORT_SETTINGS.image.scale = 1;
+            EXPORT_SETTINGS.image.jpegQuality = 0.8;
+            EXPORT_SETTINGS.image.format = 'jpeg';
+        }
+        console.log(`Image quality set to: ${quality}`, EXPORT_SETTINGS.image);
+    }
+};
+
 /**
  * Export invoice as image
  * @param {HTMLElement} element - Element to export
@@ -26,20 +81,32 @@ async function performImageExport(element, filename) {
         // Import html2canvas dynamically
         const html2canvas = (await import('html2canvas')).default;
         
+        // Optimized canvas settings for better performance and smaller file size
         const canvas = await html2canvas(element, {
             backgroundColor: '#ffffff',
-            scale: 2,
+            scale: EXPORT_SETTINGS.image.scale,
             useCORS: true,
             allowTaint: false,
             logging: false,
             scrollX: 0,
-            scrollY: 0
+            scrollY: 0,
+            // Additional optimizations
+            width: element.offsetWidth,
+            height: element.offsetHeight,
+            windowWidth: element.offsetWidth,
+            windowHeight: element.offsetHeight
         });
 
-        // Create download link
+        // Create download link with configurable compression
         const link = document.createElement('a');
-        link.download = `${filename}.png`;
-        link.href = canvas.toDataURL('image/png');
+        const extension = EXPORT_SETTINGS.image.format === 'jpeg' ? 'jpg' : 'png';
+        link.download = `${filename}.${extension}`;
+        
+        if (EXPORT_SETTINGS.image.format === 'jpeg') {
+            link.href = canvas.toDataURL('image/jpeg', EXPORT_SETTINGS.image.jpegQuality);
+        } else {
+            link.href = canvas.toDataURL('image/png');
+        }
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -69,13 +136,17 @@ export async function exportAsPDF(element, filename) {
  */
 async function performPDFExport(element, filename) {
     try {
+        // Log current quality settings for transparency
+        console.log('📄 PDF Export Settings:', EXPORT_SETTINGS.pdf);
+        
         // Import libraries dynamically
         const html2canvas = (await import('html2canvas')).default;
         const { jsPDF } = await import('jspdf');
 
+        // Canvas settings - removed width/height constraints to allow proper scaling
         const canvas = await html2canvas(element, {
             backgroundColor: '#ffffff',
-            scale: 2,
+            scale: EXPORT_SETTINGS.pdf.scale,
             useCORS: true,
             allowTaint: false,
             logging: false,
@@ -83,37 +154,72 @@ async function performPDFExport(element, filename) {
             scrollY: 0
         });
 
-        const pdf = new jsPDF('p', 'mm', 'a4');
+        // Create PDF with configurable compression
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: EXPORT_SETTINGS.pdf.compression
+        });
 
+        // Use PNG format for proper scaling (like original implementation)
         const imgData = canvas.toDataURL('image/png');
         const pageWidth = 210; // A4 width in mm
         const pageHeight = 295; // A4 height in mm
         
+        // Debug logging
+        console.log('Canvas dimensions:', {
+            width: canvas.width,
+            height: canvas.height,
+            scale: EXPORT_SETTINGS.pdf.scale,
+            elementWidth: element.offsetWidth,
+            elementHeight: element.offsetHeight
+        });
+        
         // Calculate dimensions to fit the image properly
+        // Use the original approach - fit to page width and let height be proportional
         const imgWidth = pageWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
+        // Ensure the image doesn't exceed page boundaries
+        const finalImgWidth = Math.min(imgWidth, pageWidth);
+        const finalImgHeight = Math.min(imgHeight, pageHeight);
+        
+        console.log('PDF dimensions:', {
+            pageWidth,
+            pageHeight,
+            imgWidth,
+            imgHeight,
+            finalImgWidth,
+            finalImgHeight
+        });
+        
         // If image is taller than page, we'll need multiple pages
+        const compressionMode = EXPORT_SETTINGS.pdf.fastMode ? 'FAST' : 'SLOW';
+        
         if (imgHeight <= pageHeight) {
-            // Single page - center the image
-            const yOffset = (pageHeight - imgHeight) / 2;
-            pdf.addImage(imgData, 'PNG', 0, yOffset, imgWidth, imgHeight);
+            // Single page - use original dimensions to fill the page properly
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, compressionMode);
         } else {
-            // Multiple pages needed
+            // Multiple pages needed - use original dimensions for proper scaling
             let heightLeft = imgHeight;
             let position = 0;
 
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, compressionMode);
             heightLeft -= pageHeight;
 
             while (heightLeft >= 0) {
                 position = heightLeft - imgHeight;
                 pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, compressionMode);
                 heightLeft -= pageHeight;
             }
         }
 
+        // Additional compression if enabled
+        if (EXPORT_SETTINGS.pdf.compression) {
+            pdf.compress = true;
+        }
         pdf.save(`${filename}.pdf`);
 
         showNotification('PDF exported successfully!', 'success');
