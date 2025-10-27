@@ -31,7 +31,7 @@ class LightningPayment {
         try {
             const { LightningAddress } = await import('@getalby/lightning-tools');
             
-            const ln = new LightningAddress('bullish@blitz-wallet.com');
+            const ln = new LightningAddress('bullish@getalby.com');
             await ln.fetch();
             
             const invoice = await ln.requestInvoice({ 
