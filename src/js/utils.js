@@ -58,14 +58,14 @@ export function showNotification(message, type = 'success') {
     // Style the notification
     Object.assign(notification.style, {
         position: 'fixed',
-        top: '20px',
-        right: '20px',
+        bottom: '20px',
+        left: '20px',
         padding: '15px 20px',
         borderRadius: '8px',
         color: 'white',
         fontWeight: 'bold',
         zIndex: '1000',
-        transform: 'translateX(100%)',
+        transform: 'translateX(-100%)',
         transition: 'transform 0.3s ease',
         maxWidth: '300px',
         wordWrap: 'break-word'
@@ -89,7 +89,7 @@ export function showNotification(message, type = 'success') {
     
     // Remove after 3 seconds
     setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
+        notification.style.transform = 'translateX(-100%)';
         setTimeout(() => {
             document.body.removeChild(notification);
         }, 300);

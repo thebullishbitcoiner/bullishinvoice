@@ -31,6 +31,7 @@ import {
     saveTemplate, 
     loadTemplate, 
     getTemplateNames,
+    deleteTemplate,
     loadSettings
 } from './storage.js';
 
@@ -57,7 +58,7 @@ class InvoiceGenerator {
         this.loadSavedData();
         this.setupAutoSave();
         this.updatePreview();
-        this.setupTemplateControls();
+        this.setupHamburgerMenu();
     }
 
     setupEventListeners() {
@@ -402,24 +403,37 @@ class InvoiceGenerator {
     }
 
     clearForm() {
-        if (confirm('Are you sure you want to clear all form data? This action cannot be undone.')) {
-            const defaultDates = getDefaultDates();
-            
-            document.getElementById('invoiceNumber').value = generateInvoiceNumber(this.settings.defaultInvoicePrefix);
-            document.getElementById('invoiceDate').value = defaultDates.invoiceDate;
-            document.getElementById('fromName').value = '';
-            document.getElementById('toName').value = '';
-            document.getElementById('description').value = '';
-            document.getElementById('quantity').value = '1';
-            document.getElementById('rate').value = '';
-            document.getElementById('lightningAddress').value = '';
-            this.currentLightningInvoice = '';
-            document.getElementById('notes').value = '';
+        this.showConfirmDialog(
+            'Clear Form',
+            'Are you sure you want to clear all form data? This action cannot be undone.',
+            () => {
+                const defaultDates = getDefaultDates();
+                
+                document.getElementById('invoiceNumber').value = generateInvoiceNumber(this.settings.defaultInvoicePrefix);
+                document.getElementById('invoiceDate').value = defaultDates.invoiceDate;
+                document.getElementById('fromName').value = '';
+                document.getElementById('toName').value = '';
+                
+                // Clear first line item
+                document.getElementById('description-1').value = '';
+                document.getElementById('quantity-1').value = '1';
+                document.getElementById('rate-1').value = '';
+                
+                // Remove additional line items
+                const lineItems = document.querySelectorAll('.line-item');
+                for (let i = 1; i < lineItems.length; i++) {
+                    lineItems[i].remove();
+                }
+                
+                document.getElementById('lightningAddress').value = '';
+                this.currentLightningInvoice = '';
+                document.getElementById('notes').value = '';
 
-            this.updatePreview();
-            this.saveFormData();
-            showNotification('Form cleared successfully!', 'success');
-        }
+                this.updatePreview();
+                this.saveFormData();
+                showNotification('Form cleared successfully!', 'success');
+            }
+        );
     }
 
     saveFormData() {
@@ -452,36 +466,224 @@ class InvoiceGenerator {
         }
     }
 
-    setupTemplateControls() {
-        // Add template controls to the form if they don't exist
-        const formPanel = document.querySelector('.form-panel');
-        if (formPanel && !document.querySelector('.template-controls')) {
-            const templateControls = this.createTemplateControls();
-            formPanel.insertBefore(templateControls, formPanel.firstChild);
+    setupHamburgerMenu() {
+        // Create menu overlay and sidebar if they don't exist
+        if (!document.querySelector('.menu-overlay')) {
+            const menuHTML = `
+                <div class="menu-overlay" id="menuOverlay"></div>
+                <div class="menu-sidebar" id="menuSidebar">
+                    <div class="menu-section">
+                        <h3>Invoice Actions</h3>
+                        <div class="menu-buttons">
+                            <button class="menu-btn" id="menuGenerateInvoice">New Invoice #</button>
+                            <button class="menu-btn" id="menuClearForm">Clear Form</button>
+                        </div>
+                    </div>
+                    
+                    <div class="menu-section">
+                        <h3>Templates</h3>
+                        <div class="menu-buttons">
+                            <button class="menu-btn" id="menuSaveTemplate">Save Template</button>
+                        </div>
+                        <div class="template-list" id="templateList">
+                            <div class="no-templates">No templates saved</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="menu-close-btn" id="menuCloseBtn" aria-label="Close Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            `;
+            document.body.insertAdjacentHTML('beforeend', menuHTML);
+        }
+
+        // Setup hamburger button
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const menuSidebar = document.getElementById('menuSidebar');
+        const menuCloseBtn = document.getElementById('menuCloseBtn');
+
+        const toggleMenu = () => {
+            hamburgerBtn.classList.toggle('active');
+            menuOverlay.classList.toggle('active');
+            menuSidebar.classList.toggle('active');
+            menuCloseBtn.classList.toggle('active');
+        };
+
+        hamburgerBtn.addEventListener('click', toggleMenu);
+        menuOverlay.addEventListener('click', toggleMenu);
+        menuCloseBtn.addEventListener('click', toggleMenu);
+
+        // Setup menu buttons
+        document.getElementById('menuGenerateInvoice').addEventListener('click', () => {
+            this.generateNewInvoiceNumber();
+            toggleMenu();
+        });
+
+        document.getElementById('menuClearForm').addEventListener('click', () => {
+            this.clearForm();
+            toggleMenu();
+        });
+
+        document.getElementById('menuSaveTemplate').addEventListener('click', () => {
+            this.saveCurrentTemplate();
+        });
+
+        // Load and display templates
+        this.refreshTemplateList();
+    }
+
+    refreshTemplateList() {
+        const templateListContainer = document.getElementById('templateList');
+        const templates = getTemplateNames();
+
+        if (templates.length === 0) {
+            templateListContainer.innerHTML = '<div class="no-templates">No templates saved</div>';
+            return;
+        }
+
+        let templateHTML = '';
+        templates.forEach(name => {
+            templateHTML += `
+                <div class="template-item">
+                    <span class="template-name" onclick="app.loadTemplateByName('${name}')">${name}</span>
+                    <div class="template-actions">
+                        <button class="template-action-btn load" onclick="app.loadTemplateByName('${name}')">Load</button>
+                        <button class="template-action-btn delete" onclick="app.deleteTemplateByName('${name}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        templateListContainer.innerHTML = templateHTML;
+    }
+
+    loadTemplateByName(name) {
+        const templateData = loadTemplate(name);
+        if (templateData) {
+            this.setFormData(templateData);
+            this.updatePreview();
+            this.saveFormData();
+            showNotification(`Template "${name}" loaded successfully!`, 'success');
+            
+            // Close menu
+            document.getElementById('hamburgerBtn').classList.remove('active');
+            document.getElementById('menuOverlay').classList.remove('active');
+            document.getElementById('menuSidebar').classList.remove('active');
+            document.getElementById('menuCloseBtn').classList.remove('active');
         }
     }
 
-    createTemplateControls() {
-        const controls = document.createElement('div');
-        controls.className = 'template-controls';
-        controls.innerHTML = `
-            <h3>Templates</h3>
-            <div class="template-buttons">
-                <button type="button" class="btn btn-success" onclick="app.saveCurrentTemplate()">
-                    Save Template
-                </button>
-                <button type="button" class="btn btn-secondary" onclick="app.loadTemplateDialog()">
-                    Load Template
-                </button>
-                <button type="button" class="btn btn-warning" onclick="app.clearForm()">
-                    Clear Form
-                </button>
-                <button type="button" class="btn btn-primary" onclick="app.generateNewInvoiceNumber()">
-                    New Invoice #
-                </button>
+    deleteTemplateByName(name) {
+        this.showConfirmDialog(
+            'Delete Template',
+            `Are you sure you want to delete the template "${name}"?`,
+            () => {
+                deleteTemplate(name);
+                showNotification(`Template "${name}" deleted successfully!`, 'success');
+                this.refreshTemplateList();
+            }
+        );
+    }
+
+    showConfirmDialog(title, message, onConfirm) {
+        const dialog = document.createElement('div');
+        dialog.className = 'confirm-modal-overlay';
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        `;
+
+        dialog.innerHTML = `
+            <div style="
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                padding: 30px;
+                border-radius: 5px;
+                border: 1px solid rgba(255, 153, 0, 0.3);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                max-width: 400px;
+                width: 90%;
+            ">
+                <h3 style="color: #ff9900; margin-bottom: 20px; font-size: 1.3em; font-weight: bold;">${title}</h3>
+                <p style="color: #ffffff; margin-bottom: 25px; line-height: 1.5;">${message}</p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button id="confirmCancelBtn" style="
+                        padding: 10px 20px;
+                        background: rgba(255, 255, 255, 0.1);
+                        color: #ffffff;
+                        border: 2px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                    ">Cancel</button>
+                    <button id="confirmBtn" style="
+                        padding: 10px 20px;
+                        background: linear-gradient(45deg, #ff9900, #ffaa33);
+                        color: #000000;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                    ">Confirm</button>
+                </div>
             </div>
         `;
-        return controls;
+
+        document.body.appendChild(dialog);
+        
+        const cancelBtn = dialog.querySelector('#confirmCancelBtn');
+        const confirmBtn = dialog.querySelector('#confirmBtn');
+        
+        // Add hover effects
+        if (cancelBtn) {
+            cancelBtn.addEventListener('mouseenter', () => {
+                cancelBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+                cancelBtn.style.transform = 'translateY(-2px)';
+            });
+            cancelBtn.addEventListener('mouseleave', () => {
+                cancelBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+                cancelBtn.style.transform = 'translateY(0)';
+            });
+            cancelBtn.addEventListener('click', () => {
+                dialog.remove();
+            });
+        }
+        
+        if (confirmBtn) {
+            confirmBtn.addEventListener('mouseenter', () => {
+                confirmBtn.style.transform = 'translateY(-2px)';
+                confirmBtn.style.boxShadow = '0 5px 15px rgba(255, 153, 0, 0.4)';
+            });
+            confirmBtn.addEventListener('mouseleave', () => {
+                confirmBtn.style.transform = 'translateY(0)';
+                confirmBtn.style.boxShadow = 'none';
+            });
+            confirmBtn.addEventListener('click', () => {
+                onConfirm();
+                dialog.remove();
+            });
+        }
+        
+        // Close on overlay click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.remove();
+            }
+        });
     }
 
     saveCurrentTemplate() {
@@ -637,6 +839,7 @@ class InvoiceGenerator {
                     };
                     saveTemplate(name.trim(), templateData);
                     showNotification(`Template "${name}" saved successfully!`, 'success');
+                    this.refreshTemplateList();
                     dialog.remove();
                 } else {
                     showNotification('Please enter a template name', 'warning');
@@ -661,136 +864,6 @@ class InvoiceGenerator {
         }
     }
 
-    loadTemplateDialog() {
-        const templates = getTemplateNames();
-        if (templates.length === 0) {
-            showNotification('No saved templates found.', 'warning');
-            return;
-        }
-
-        const templateList = templates.map(name => `<option value="${name}">${name}</option>`).join('');
-        const dialog = document.createElement('div');
-        dialog.className = 'template-modal-overlay';
-        dialog.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        `;
-
-        dialog.innerHTML = `
-            <div style="
-                background: rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(10px);
-                padding: 30px;
-                border-radius: 5px;
-                border: 1px solid rgba(255, 153, 0, 0.3);
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                max-width: 400px;
-                width: 90%;
-            ">
-                <h3 style="color: #ff9900; margin-bottom: 20px; font-size: 1.3em; font-weight: bold;">Load Template</h3>
-                <select id="templateSelect" style="
-                    width: 100%;
-                    padding: 12px 16px;
-                    margin-bottom: 20px;
-                    background: rgba(255, 255, 255, 0.1);
-                    border: 2px solid rgba(255, 153, 0, 0.3);
-                    border-radius: 5px;
-                    color: #ffffff;
-                    font-size: 16px;
-                    cursor: pointer;
-                ">
-                    ${templateList}
-                </select>
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button id="cancelTemplateBtn" style="
-                        padding: 10px 20px;
-                        background: rgba(255, 255, 255, 0.1);
-                        color: #ffffff;
-                        border: 2px solid rgba(255, 255, 255, 0.2);
-                        border-radius: 5px;
-                        cursor: pointer;
-                        font-weight: bold;
-                        transition: all 0.3s ease;
-                    ">Cancel</button>
-                    <button id="loadTemplateBtn" style="
-                        padding: 10px 20px;
-                        background: linear-gradient(45deg, #ff9900, #ffaa33);
-                        color: #000000;
-                        border: none;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        font-weight: bold;
-                        transition: all 0.3s ease;
-                    ">Load</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(dialog);
-        
-        // Add event listeners
-        const cancelBtn = dialog.querySelector('#cancelTemplateBtn');
-        const loadBtn = dialog.querySelector('#loadTemplateBtn');
-        
-        // Add hover effects
-        if (cancelBtn) {
-            cancelBtn.addEventListener('mouseenter', () => {
-                cancelBtn.style.background = 'rgba(255, 255, 255, 0.2)';
-                cancelBtn.style.transform = 'translateY(-2px)';
-            });
-            cancelBtn.addEventListener('mouseleave', () => {
-                cancelBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-                cancelBtn.style.transform = 'translateY(0)';
-            });
-            cancelBtn.addEventListener('click', () => {
-                dialog.remove();
-            });
-        }
-        
-        if (loadBtn) {
-            loadBtn.addEventListener('mouseenter', () => {
-                loadBtn.style.transform = 'translateY(-2px)';
-                loadBtn.style.boxShadow = '0 5px 15px rgba(255, 153, 0, 0.4)';
-            });
-            loadBtn.addEventListener('mouseleave', () => {
-                loadBtn.style.transform = 'translateY(0)';
-                loadBtn.style.boxShadow = 'none';
-            });
-            loadBtn.addEventListener('click', () => {
-                this.loadSelectedTemplate();
-                dialog.remove();
-            });
-        }
-        
-        // Close on overlay click
-        dialog.addEventListener('click', (e) => {
-            if (e.target === dialog) {
-                dialog.remove();
-            }
-        });
-    }
-
-    loadSelectedTemplate() {
-        const select = document.getElementById('templateSelect');
-        const templateName = select.value;
-        const templateData = loadTemplate(templateName);
-        
-        if (templateData) {
-            this.setFormData(templateData);
-            this.updatePreview();
-            this.saveFormData();
-            showNotification(`Template "${templateName}" loaded successfully!`, 'success');
-        }
-    }
 
     loadVersion() {
         try {

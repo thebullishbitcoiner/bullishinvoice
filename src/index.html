@@ -20,13 +20,23 @@
     <script type="module" src="https://unpkg.com/bitcoin-qr@1.4.1/dist/bitcoin-qr/bitcoin-qr.esm.js"></script>
 </head>
 <body>
+    <header class="app-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>
+                    bullishInvoice
+                    <span class="version" id="versionDisplay"></span>
+                </h1>
+            </div>
+            <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
     <div class="container">
-        <header class="app-header">
-            <h1>
-                bullishInvoice
-                <span class="version" id="versionDisplay"></span>
-            </h1>
-        </header>
         
         <div class="main-content">
             <div class="form-panel">
