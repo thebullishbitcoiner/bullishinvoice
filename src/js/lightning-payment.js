@@ -35,7 +35,7 @@ class LightningPayment {
             await ln.fetch();
             
             const invoice = await ln.requestInvoice({ 
-                satoshi: 21,
+                satoshi: 22,
                 description: 'Export payment for bullishInvoice',
                 expiry: 86400 // 24 hours
             });
