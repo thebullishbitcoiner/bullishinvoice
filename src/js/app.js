@@ -616,16 +616,39 @@ class InvoiceGenerator {
     }
 
     updateQRCode(lightningInvoice) {
-        const qrElement = document.querySelector('#qrCodeContainer bitcoin-qr');
+        const qrContainer = document.getElementById('qrCodeContainer');
+        let qrElement = qrContainer?.querySelector('bitcoin-qr');
         
-        if (qrElement && lightningInvoice) {
-            // Update the lightning attribute to generate new QR code
-            qrElement.setAttribute('lightning', lightningInvoice);
-            qrElement.setAttribute('is-polling', 'true');
-            
-            // Update dynamic size
-            this.updateQRCodeSize();
+        if (!qrContainer || !lightningInvoice) {
+            return;
         }
+        
+        // If QR element doesn't exist or we need to update it, recreate it
+        if (qrElement) {
+            // Remove old element to force recreation
+            qrElement.remove();
+        }
+        
+        // Calculate size
+        const calculatedSize = Math.min(Math.floor(window.innerWidth / 3), 300);
+        const size = Math.round(calculatedSize / 100) * 100;
+        
+        // Create new bitcoin-qr element
+        qrElement = document.createElement('bitcoin-qr');
+        qrElement.setAttribute('lightning', lightningInvoice);
+        qrElement.setAttribute('type', 'svg');
+        qrElement.setAttribute('width', size.toString());
+        qrElement.setAttribute('height', size.toString());
+        qrElement.setAttribute('dots-color', '#ff9900');
+        qrElement.setAttribute('background-color', 'transparent');
+        qrElement.setAttribute('corners-square-color', '#ff9900');
+        qrElement.setAttribute('poll-interval', '3000');
+        qrElement.setAttribute('is-polling', 'true');
+        
+        // Append to container
+        qrContainer.appendChild(qrElement);
+        
+        console.log('QR code updated with invoice:', lightningInvoice.substring(0, 20) + '...');
     }
 
 
