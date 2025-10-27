@@ -485,11 +485,179 @@ class InvoiceGenerator {
     }
 
     saveCurrentTemplate() {
-        const name = prompt('Enter template name:');
-        if (name && name.trim()) {
-            const templateData = this.getFormData();
-            saveTemplate(name.trim(), templateData);
-            showNotification(`Template "${name}" saved successfully!`, 'success');
+        const dialog = document.createElement('div');
+        dialog.className = 'template-modal-overlay';
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        `;
+
+        dialog.innerHTML = `
+            <div style="
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                padding: 30px;
+                border-radius: 5px;
+                border: 1px solid rgba(255, 153, 0, 0.3);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                max-width: 400px;
+                width: 90%;
+            ">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #ff9900; font-size: 1.3em; font-weight: bold; margin: 0;">Save Template</h3>
+                    <div style="position: relative; display: inline-block;">
+                        <svg id="infoIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor: help;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <div id="infoTooltip" style="
+                            position: absolute;
+                            bottom: calc(100% + 8px);
+                            left: 75%;
+                            transform: translateX(-50%);
+                            background: rgba(0, 0, 0, 0.95);
+                            color: #ffffff;
+                            padding: 12px 18px;
+                            border-radius: 5px;
+                            font-size: 14px;
+                            white-space: normal;
+                            width: 400px;
+                            border: 1px solid rgba(255, 153, 0, 0.3);
+                            pointer-events: none;
+                            opacity: 0;
+                            transition: opacity 0.3s ease;
+                            z-index: 1001;
+                            line-height: 1.5;
+                            text-align: center;
+                        ">
+                            Saves from/to names, Lightning address, and notes for quicker invoice creation for regular clients.
+                        </div>
+                    </div>
+                </div>
+                <input type="text" id="templateNameInput" placeholder="Enter template name" style="
+                    width: 100%;
+                    padding: 12px 16px;
+                    margin-bottom: 20px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 2px solid rgba(255, 153, 0, 0.3);
+                    border-radius: 5px;
+                    color: #ffffff;
+                    font-size: 16px;
+                    box-sizing: border-box;
+                ">
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button id="cancelSaveBtn" style="
+                        padding: 10px 20px;
+                        background: rgba(255, 255, 255, 0.1);
+                        color: #ffffff;
+                        border: 2px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                    ">Cancel</button>
+                    <button id="saveBtn" style="
+                        padding: 10px 20px;
+                        background: linear-gradient(45deg, #ff9900, #ffaa33);
+                        color: #000000;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
+                    ">Save</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(dialog);
+        
+        // Focus the input
+        const input = dialog.querySelector('#templateNameInput');
+        setTimeout(() => input?.focus(), 100);
+        
+        // Add tooltip hover functionality
+        const infoIcon = dialog.querySelector('#infoIcon');
+        const infoTooltip = dialog.querySelector('#infoTooltip');
+        if (infoIcon && infoTooltip) {
+            infoIcon.addEventListener('mouseenter', () => {
+                infoTooltip.style.opacity = '1';
+            });
+            infoIcon.addEventListener('mouseleave', () => {
+                infoTooltip.style.opacity = '0';
+            });
+        }
+        
+        // Add event listeners
+        const cancelBtn = dialog.querySelector('#cancelSaveBtn');
+        const saveBtn = dialog.querySelector('#saveBtn');
+        
+        // Add hover effects
+        if (cancelBtn) {
+            cancelBtn.addEventListener('mouseenter', () => {
+                cancelBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+                cancelBtn.style.transform = 'translateY(-2px)';
+            });
+            cancelBtn.addEventListener('mouseleave', () => {
+                cancelBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+                cancelBtn.style.transform = 'translateY(0)';
+            });
+            cancelBtn.addEventListener('click', () => {
+                dialog.remove();
+            });
+        }
+        
+        if (saveBtn) {
+            saveBtn.addEventListener('mouseenter', () => {
+                saveBtn.style.transform = 'translateY(-2px)';
+                saveBtn.style.boxShadow = '0 5px 15px rgba(255, 153, 0, 0.4)';
+            });
+            saveBtn.addEventListener('mouseleave', () => {
+                saveBtn.style.transform = 'translateY(0)';
+                saveBtn.style.boxShadow = 'none';
+            });
+            saveBtn.addEventListener('click', () => {
+                const name = input?.value;
+                if (name && name.trim()) {
+                    const templateData = {
+                        fromName: document.getElementById('fromName')?.value || '',
+                        toName: document.getElementById('toName')?.value || '',
+                        lightningAddress: document.getElementById('lightningAddress')?.value || '',
+                        notes: document.getElementById('notes')?.value || ''
+                    };
+                    saveTemplate(name.trim(), templateData);
+                    showNotification(`Template "${name}" saved successfully!`, 'success');
+                    dialog.remove();
+                } else {
+                    showNotification('Please enter a template name', 'warning');
+                }
+            });
+        }
+        
+        // Close on overlay click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.remove();
+            }
+        });
+        
+        // Save on Enter key
+        if (input) {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    saveBtn?.click();
+                }
+            });
         }
     }
 
@@ -502,13 +670,15 @@ class InvoiceGenerator {
 
         const templateList = templates.map(name => `<option value="${name}">${name}</option>`).join('');
         const dialog = document.createElement('div');
+        dialog.className = 'template-modal-overlay';
         dialog.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -517,41 +687,49 @@ class InvoiceGenerator {
 
         dialog.innerHTML = `
             <div style="
-                background: #1a1a2e;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
                 padding: 30px;
-                border-radius: 15px;
-                border: 1px solid rgba(255, 215, 0, 0.3);
+                border-radius: 5px;
+                border: 1px solid rgba(255, 153, 0, 0.3);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
                 max-width: 400px;
                 width: 90%;
             ">
-                <h3 style="color: #ffd700; margin-bottom: 20px;">Load Template</h3>
+                <h3 style="color: #ff9900; margin-bottom: 20px; font-size: 1.3em; font-weight: bold;">Load Template</h3>
                 <select id="templateSelect" style="
                     width: 100%;
-                    padding: 12px;
+                    padding: 12px 16px;
                     margin-bottom: 20px;
                     background: rgba(255, 255, 255, 0.1);
-                    border: 2px solid rgba(255, 215, 0, 0.3);
-                    border-radius: 10px;
-                    color: white;
+                    border: 2px solid rgba(255, 153, 0, 0.3);
+                    border-radius: 5px;
+                    color: #ffffff;
+                    font-size: 16px;
+                    cursor: pointer;
                 ">
                     ${templateList}
                 </select>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button id="cancelTemplateBtn" style="
                         padding: 10px 20px;
-                        background: #6366f1;
-                        color: white;
-                        border: none;
-                        border-radius: 8px;
+                        background: rgba(255, 255, 255, 0.1);
+                        color: #ffffff;
+                        border: 2px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 5px;
                         cursor: pointer;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
                     ">Cancel</button>
                     <button id="loadTemplateBtn" style="
                         padding: 10px 20px;
-                        background: #10b981;
-                        color: white;
+                        background: linear-gradient(45deg, #ff9900, #ffaa33);
+                        color: #000000;
                         border: none;
-                        border-radius: 8px;
+                        border-radius: 5px;
                         cursor: pointer;
+                        font-weight: bold;
+                        transition: all 0.3s ease;
                     ">Load</button>
                 </div>
             </div>
@@ -563,18 +741,42 @@ class InvoiceGenerator {
         const cancelBtn = dialog.querySelector('#cancelTemplateBtn');
         const loadBtn = dialog.querySelector('#loadTemplateBtn');
         
+        // Add hover effects
         if (cancelBtn) {
+            cancelBtn.addEventListener('mouseenter', () => {
+                cancelBtn.style.background = 'rgba(255, 255, 255, 0.2)';
+                cancelBtn.style.transform = 'translateY(-2px)';
+            });
+            cancelBtn.addEventListener('mouseleave', () => {
+                cancelBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+                cancelBtn.style.transform = 'translateY(0)';
+            });
             cancelBtn.addEventListener('click', () => {
                 dialog.remove();
             });
         }
         
         if (loadBtn) {
+            loadBtn.addEventListener('mouseenter', () => {
+                loadBtn.style.transform = 'translateY(-2px)';
+                loadBtn.style.boxShadow = '0 5px 15px rgba(255, 153, 0, 0.4)';
+            });
+            loadBtn.addEventListener('mouseleave', () => {
+                loadBtn.style.transform = 'translateY(0)';
+                loadBtn.style.boxShadow = 'none';
+            });
             loadBtn.addEventListener('click', () => {
                 this.loadSelectedTemplate();
                 dialog.remove();
             });
         }
+        
+        // Close on overlay click
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.remove();
+            }
+        });
     }
 
     loadSelectedTemplate() {

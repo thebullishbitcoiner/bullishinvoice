@@ -1,7 +1,7 @@
 // Storage management for form persistence and templates
 
 const STORAGE_KEYS = {
-    FORM_DATA: 'bullishinvoice_form_data',
+    FORM_DATA: 'bullishinvoice_formData',
     TEMPLATES: 'bullishinvoice_templates',
     SETTINGS: 'bullishinvoice_settings'
 };
